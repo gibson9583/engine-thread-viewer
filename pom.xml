@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>io.github.gibson9583</groupId>
+    <artifactId>thread-viewer</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+
+    <name>OIE Thread Viewer Plugin</name>
+    <description>Real-time JVM thread monitoring plugin for OIE with channel-aware filtering</description>
+
+    <modules>
+        <module>shared</module>
+        <module>server</module>
+        <module>client</module>
+        <module>package</module>
+    </modules>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
+        <mirth.version>4.5.2</mirth.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>repsy-mirth</id>
+            <url>https://repo.repsy.io/mvn/kpalang/mirthconnect</url>
+        </repository>
+    </repositories>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- OIE -->
+            <dependency>
+                <groupId>com.mirth.connect</groupId>
+                <artifactId>mirth-server</artifactId>
+                <version>${mirth.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.mirth.connect</groupId>
+                <artifactId>mirth-client-core</artifactId>
+                <version>${mirth.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.mirth.connect</groupId>
+                <artifactId>mirth-client</artifactId>
+                <version>${mirth.version}</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.mirth.connect</groupId>
+                <artifactId>donkey-model</artifactId>
+                <version>${mirth.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Internal modules -->
+            <dependency>
+                <groupId>io.github.gibson9583</groupId>
+                <artifactId>thread-viewer-shared</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <release>17</release>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.4.1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>
