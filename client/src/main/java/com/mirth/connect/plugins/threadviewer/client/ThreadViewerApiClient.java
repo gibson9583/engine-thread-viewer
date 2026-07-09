@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
  * Client-side API calls for the Thread Viewer.
  *
  * ──────────────────────────────────────────────────────────────
- *  TARGET MIRTH VERSION: 4.5.2
+ *  TARGET OIE VERSION: 4.6.0
  *
  *  Uses the servlet pattern introduced in 3.4.0:
  *    mirthClient.getServlet(ThreadViewerServletInterface.class)

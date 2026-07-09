@@ -6,7 +6,7 @@
 
     <groupId>io.github.gibson9583</groupId>
     <artifactId>thread-viewer</artifactId>
-    <version>1.0.0</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>OIE Thread Viewer Plugin</name>
@@ -20,9 +20,21 @@
     </modules>
 
     <properties>
+        <!-- Release version — CI overrides with -Drevision=<tag> so the built
+             zip and plugin.xml pluginVersion follow the git tag. -->
+        <revision>1.0.0</revision>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
-        <mirth.version>4.5.2</mirth.version>
+        <!-- Engine artifacts to COMPILE against. The public repsy mirror does
+             not yet carry 4.6.0 — install a local engine build's jars first
+             via scripts/install-engine-jars.sh (CI installs them from the
+             published OIE distribution instead). -->
+        <mirth.version>4.6.0</mirth.version>
+        <!-- Engine versions the packaged plugin DECLARES support for
+             (plugin.xml <mirthVersion> — the extension loader only loads a
+             plugin whose list contains the running engine version). -->
+        <plugin.supported.oie.versions>${mirth.version}</plugin.supported.oie.versions>
     </properties>
 
     <repositories>
