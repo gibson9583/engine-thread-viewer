@@ -38,8 +38,10 @@ jobs:
 
       - name: Download and digest the release asset
         run: |
-          gh release download "$TAG" -R "${{ github.repository }}" \
-            -p "${PLUGIN_ID}-${VERSION}.zip" -O asset.zip
+          # Public asset URL, no auth: CATALOG_TOKEN is scoped to the catalog repo
+          # and fine-grained PATs can 404 on API reads outside their grant.
+          curl -fL --retry 5 --retry-delay 5 -o asset.zip \
+            "https://github.com/${{ github.repository }}/releases/download/${TAG}/${PLUGIN_ID}-${VERSION}.zip"
           echo "SHA256=$(sha256sum asset.zip | cut -d' ' -f1)" >> "$GITHUB_ENV"
 
       - name: Read minEngineVersion from the tagged oie.json

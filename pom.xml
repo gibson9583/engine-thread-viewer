@@ -22,7 +22,7 @@
     <properties>
         <!-- Release version — CI overrides with -Drevision=<tag> so the built
              zip and plugin.xml pluginVersion follow the git tag. -->
-        <revision>1.0.2</revision>
+        <revision>1.0.3</revision>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>

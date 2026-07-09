@@ -148,6 +148,36 @@ const store = {
 
 function emit() { store.listeners.forEach(fn => fn()); }
 
+/* ---- resizable columns (persisted like the host's column manager) ---------- */
+
+const WIDTHS_KEY = 'thread-viewer.column-widths';
+
+function loadWidths() {
+    try { return JSON.parse(localStorage.getItem(WIDTHS_KEY)) || {}; } catch { return {}; }
+}
+store.colWidths = loadWidths();
+
+/* Drag the right-edge grip (host .col-resize affordance). The last column has
+   no grip — it stays auto-width and fills the container, like host tables. */
+function startResize(e, key) {
+    e.preventDefault();
+    e.stopPropagation();
+    const th = e.currentTarget.parentElement;
+    const startX = e.clientX;
+    const startW = th.getBoundingClientRect().width;
+    const move = (ev) => {
+        store.colWidths = { ...store.colWidths, [key]: Math.max(50, Math.round(startW + (ev.clientX - startX))) };
+        emit();
+    };
+    const up = () => {
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', up);
+        try { localStorage.setItem(WIDTHS_KEY, JSON.stringify(store.colWidths)); } catch { /* ignore */ }
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+}
+
 function clearPoll() {
     if (store.timer) { clearTimeout(store.timer); store.timer = null; }
 }
@@ -412,7 +442,7 @@ function exportThreadDump() {
 /* ---- table ----------------------------------------------------------------- */
 
 const COLUMNS = [
-    { key: 'name', label: 'Thread Name', get: t => t.name },
+    { key: 'name', label: 'Thread Name', get: t => t.name, width: 320 },
     { key: 'state', label: 'State', get: t => t.state, width: 110 },
     { key: 'cpu', label: 'CPU (ms)', get: t => t.cpuMs, num: true, width: 80 },
     { key: 'category', label: 'Category', get: t => t.category, width: 140 },
@@ -554,18 +584,30 @@ function ThreadViewerTab() {
 
             {/* scrollable thread table */}
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
-                <table className="dt thread-viewer w-full table-fixed">
+                <table className="dt dt-resizable thread-viewer w-full table-fixed">
+                    <colgroup>
+                        {COLUMNS.map((col, i) => (
+                            <col key={col.key}
+                                style={i < COLUMNS.length - 1
+                                    ? { width: (store.colWidths[col.key] ?? col.width ?? 140) + 'px' }
+                                    : null} />
+                        ))}
+                    </colgroup>
                     <thead>
                         <tr>
-                            {COLUMNS.map(col => (
+                            {COLUMNS.map((col, i) => (
                                 <th key={col.key}
                                     className={'sticky top-0 z-[1] bg-bg1 cursor-pointer select-none whitespace-nowrap'
                                         + (col.num ? ' text-right' : '')}
-                                    style={col.width ? { width: col.width + 'px' } : null}
                                     title={'Sort by ' + col.label}
                                     onClick={() => setSort(col.key)}>
                                     {col.label}
                                     {sort.key === col.key ? (sort.dir === 'desc' ? ' ▾' : ' ▴') : ''}
+                                    {i < COLUMNS.length - 1 ? (
+                                        <div className="col-resize" title=""
+                                            onPointerDown={(e) => startResize(e, col.key)}
+                                            onClick={(e) => e.stopPropagation()} />
+                                    ) : null}
                                 </th>
                             ))}
                         </tr>

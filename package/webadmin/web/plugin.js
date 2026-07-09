@@ -107,6 +107,36 @@ var store = {
 function emit() {
   store.listeners.forEach((fn) => fn());
 }
+var WIDTHS_KEY = "thread-viewer.column-widths";
+function loadWidths() {
+  try {
+    return JSON.parse(localStorage.getItem(WIDTHS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+store.colWidths = loadWidths();
+function startResize(e, key) {
+  e.preventDefault();
+  e.stopPropagation();
+  const th = e.currentTarget.parentElement;
+  const startX = e.clientX;
+  const startW = th.getBoundingClientRect().width;
+  const move = (ev) => {
+    store.colWidths = { ...store.colWidths, [key]: Math.max(50, Math.round(startW + (ev.clientX - startX))) };
+    emit();
+  };
+  const up = () => {
+    window.removeEventListener("pointermove", move);
+    window.removeEventListener("pointerup", up);
+    try {
+      localStorage.setItem(WIDTHS_KEY, JSON.stringify(store.colWidths));
+    } catch {
+    }
+  };
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", up);
+}
 function clearPoll() {
   if (store.timer) {
     clearTimeout(store.timer);
@@ -370,7 +400,7 @@ function exportThreadDump() {
   );
 }
 var COLUMNS = [
-  { key: "name", label: "Thread Name", get: (t) => t.name },
+  { key: "name", label: "Thread Name", get: (t) => t.name, width: 320 },
   { key: "state", label: "State", get: (t) => t.state, width: 110 },
   { key: "cpu", label: "CPU (ms)", get: (t) => t.cpuMs, num: true, width: 80 },
   { key: "category", label: "Category", get: (t) => t.category, width: 140 },
@@ -503,17 +533,31 @@ function ThreadViewerTab() {
     },
     /* @__PURE__ */ React.createElement("option", { value: "" }, "All States"),
     STATES.map((s) => /* @__PURE__ */ React.createElement("option", { key: s, value: s }, s))
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn text-[12px]", onClick: clearFilters }, "Clear Filters"), /* @__PURE__ */ React.createElement("span", { className: "flex-1" }), snapshot && snapshot.deadlockDetected && /* @__PURE__ */ React.createElement("span", { className: "text-err font-bold" }, "DEADLOCK DETECTED"), /* @__PURE__ */ React.createElement("span", { className: error && monitoring ? "text-err" : "text-text-faint" }, status)), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-h-0 overflow-y-auto overflow-x-hidden" }, /* @__PURE__ */ React.createElement("table", { className: "dt thread-viewer w-full table-fixed" }, /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, COLUMNS.map((col) => /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("button", { className: "btn text-[12px]", onClick: clearFilters }, "Clear Filters"), /* @__PURE__ */ React.createElement("span", { className: "flex-1" }), snapshot && snapshot.deadlockDetected && /* @__PURE__ */ React.createElement("span", { className: "text-err font-bold" }, "DEADLOCK DETECTED"), /* @__PURE__ */ React.createElement("span", { className: error && monitoring ? "text-err" : "text-text-faint" }, status)), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-h-0 overflow-y-auto overflow-x-hidden" }, /* @__PURE__ */ React.createElement("table", { className: "dt dt-resizable thread-viewer w-full table-fixed" }, /* @__PURE__ */ React.createElement("colgroup", null, COLUMNS.map((col, i) => /* @__PURE__ */ React.createElement(
+    "col",
+    {
+      key: col.key,
+      style: i < COLUMNS.length - 1 ? { width: (store.colWidths[col.key] ?? col.width ?? 140) + "px" } : null
+    }
+  ))), /* @__PURE__ */ React.createElement("thead", null, /* @__PURE__ */ React.createElement("tr", null, COLUMNS.map((col, i) => /* @__PURE__ */ React.createElement(
     "th",
     {
       key: col.key,
       className: "sticky top-0 z-[1] bg-bg1 cursor-pointer select-none whitespace-nowrap" + (col.num ? " text-right" : ""),
-      style: col.width ? { width: col.width + "px" } : null,
       title: "Sort by " + col.label,
       onClick: () => setSort(col.key)
     },
     col.label,
-    sort.key === col.key ? sort.dir === "desc" ? " \u25BE" : " \u25B4" : ""
+    sort.key === col.key ? sort.dir === "desc" ? " \u25BE" : " \u25B4" : "",
+    i < COLUMNS.length - 1 ? /* @__PURE__ */ React.createElement(
+      "div",
+      {
+        className: "col-resize",
+        title: "",
+        onPointerDown: (e) => startResize(e, col.key),
+        onClick: (e) => e.stopPropagation()
+      }
+    ) : null
   )))), /* @__PURE__ */ React.createElement("tbody", null, emptyText ? /* @__PURE__ */ React.createElement("tr", null, /* @__PURE__ */ React.createElement("td", { colSpan: COLUMNS.length, className: "text-text-faint p-3" }, emptyText)) : rows.map((t) => /* @__PURE__ */ React.createElement(ThreadRow, { key: t.threadId + "|" + t.name, t }))))));
 }
 function register(platform2) {
