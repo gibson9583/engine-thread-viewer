@@ -8,6 +8,8 @@ Works in **both administrators**: the classic Swing Administrator (a *Thread Vie
 dashboard tab) and the OIE Web Administrator (a *Thread Viewer* tab below the
 dashboard status table). Both talk to the same engine-side servlet.
 
+![Thread Viewer in the Web Administrator](thread-viewer-web.png)
+
 ## Features
 
 - Live thread table with state, CPU time, blocked/waited counts, and full
