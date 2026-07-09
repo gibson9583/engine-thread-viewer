@@ -4,7 +4,7 @@
     "name": "Thread Viewer",
     "description": "Real-time JVM thread monitoring with channel-aware filtering, deadlock detection, and jstack-compatible thread dump export — in the Swing and Web Administrators.",
     "type": "plugin",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "minEngineVersion": "4.6.0",
     "maxEngineVersion": null,
     "filename": "thread-viewer-{version}.zip",
