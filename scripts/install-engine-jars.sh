@@ -29,7 +29,7 @@ fi
 declare -a JARS=(
     "mirth-server:server/setup/server-lib/mirth-server.jar"
     "mirth-client-core:server/setup/server-lib/mirth-client-core.jar"
-    "mirth-client:server/setup/client-lib/mirth-client.jar"
+    "mirth-client:server/setup/client-lib/mirth-client.jar:client/dist/mirth-client.jar"
     "donkey-model:donkey/setup/donkey-model.jar:server/setup/server-lib/donkey/donkey-model.jar"
 )
 
