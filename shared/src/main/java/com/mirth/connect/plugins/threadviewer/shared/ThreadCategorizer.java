@@ -28,10 +28,16 @@ public final class ThreadCategorizer {
                 "^(Reference|Finalizer|Signal|GC |Attach|Common-|CompilerThread|VM |Service Thread|Sweeper|process reaper|DestroyJavaVM)"));
     }
 
-    // OIE task thread: "JavaScript Writer JavaScript Task on ChannelName-1 (uuid), ConnectorName (2) < pool-..."
-    // Source variant:   "JavaScript Reader JavaScript Task on ChannelName-1 (uuid) < pool-..."
-    private static final Pattern OIE_TASK_PATTERN = Pattern.compile(
-            "JavaScript (?:Reader|Writer) JavaScript Task on (.+?)-(\\d+) \\(([0-9a-f-]{36})\\)(?:, (.+?) \\((\\d+)\\))? < ");
+    // The engine's channel-thread convention (donkey Channel/DestinationChain/RecoveryTask/
+    // PollConnectorJob and every connector receiver — see e.g. Channel.java:1272,
+    // DestinationChain.java:121, TcpReceiver.java:550):
+    //   "<Role> on <ChannelName> (<channelId>)[, <DestinationName> (<metaDataId>)][ < <original>]"
+    // e.g. "TCP Receiver Thread on ADT Inbound (2fe30c1b-...) < qtp1450821247-52"
+    //      "Channel Dispatch Thread on ADT Inbound (2fe30c1b-...) < pool-1-thread-3"
+    //      "HTTP Sender Process Thread on ADT Inbound (2fe30c1b-...), Send to EMR (1)"
+    // The channel name is matched non-greedily up to the "(uuid)" that always follows it.
+    private static final Pattern CHANNEL_THREAD_PATTERN = Pattern.compile(
+            "^(.*?) on (.+?) \\(([0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})\\)(?:, (.+?) \\((\\d+)\\))?");
 
     // Older OIE pattern: "channel-{uuid}-connectorName-N"
     private static final Pattern CHANNEL_DASH_PATTERN = Pattern.compile(
@@ -41,6 +47,9 @@ public final class ThreadCategorizer {
 
     public static String categorize(String threadName) {
         if (threadName == null) return "Other";
+        // Anything carrying the "on <channel> (<uuid>)" convention is channel work,
+        // whatever its role prefix says.
+        if (CHANNEL_THREAD_PATTERN.matcher(threadName).find()) return "Channel Processing";
         for (Map.Entry<String, Pattern> entry : CATEGORY_PATTERNS.entrySet()) {
             if (entry.getValue().matcher(threadName).find()) return entry.getKey();
         }
@@ -50,8 +59,7 @@ public final class ThreadCategorizer {
     public static String extractChannelId(String threadName) {
         if (threadName == null) return null;
 
-        // Try OIE task thread pattern first
-        Matcher m = OIE_TASK_PATTERN.matcher(threadName);
+        Matcher m = CHANNEL_THREAD_PATTERN.matcher(threadName);
         if (m.find()) return m.group(3);
 
         // Fallback: channel-{uuid} pattern
@@ -64,13 +72,15 @@ public final class ThreadCategorizer {
     public static String extractConnectorName(String threadName) {
         if (threadName == null) return null;
 
-        // OIE task thread: connector name is after the comma
-        Matcher m = OIE_TASK_PATTERN.matcher(threadName);
+        Matcher m = CHANNEL_THREAD_PATTERN.matcher(threadName);
         if (m.find()) {
-            String connectorName = m.group(4); // null for source (no comma section)
+            // Destination threads carry the connector after a comma: ", Send to EMR (1)".
+            String connectorName = m.group(4);
             if (connectorName != null) return connectorName;
-            // Source connector — derive from the prefix
-            return threadName.startsWith("JavaScript Reader") ? "Source Reader" : "Source";
+            // Source/utility threads don't — the role prefix is the best label
+            // ("TCP Receiver Thread on ..." -> "TCP Receiver").
+            String role = m.group(1).replaceAll("\\s*Thread$", "").trim();
+            return role.isEmpty() ? null : role;
         }
 
         // Fallback: channel-{uuid}-connectorPart-N
@@ -97,8 +107,8 @@ public final class ThreadCategorizer {
     public static String extractChannelName(String threadName) {
         if (threadName == null) return null;
 
-        Matcher m = OIE_TASK_PATTERN.matcher(threadName);
-        if (m.find()) return m.group(1);
+        Matcher m = CHANNEL_THREAD_PATTERN.matcher(threadName);
+        if (m.find()) return m.group(2);
 
         return null;
     }

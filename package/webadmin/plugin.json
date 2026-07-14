@@ -1,0 +1,9 @@
+{
+    "id": "thread-viewer",
+    "name": "Thread Viewer",
+    "version": "1.0.5",
+    "author": "Chris Gibson",
+    "description": "Real-time JVM thread monitoring with channel-aware filtering, deadlock detection, and jstack-compatible thread dump export.",
+    "oie": { "apiMin": "4.6" },
+    "client": { "entry": "web/plugin.js" }
+}

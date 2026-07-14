@@ -3,7 +3,7 @@
     <name>Thread Viewer</name>
     <author>Chris Gibson</author>
     <pluginVersion>${project.version}</pluginVersion>
-    <mirthVersion>${mirth.version}</mirthVersion>
+    <mirthVersion>${plugin.supported.oie.versions}</mirthVersion>
     <url></url>
     <description>Real-time JVM thread monitoring with channel-aware filtering, state analysis, blocked thread detection, and stack trace inspection.</description>
 

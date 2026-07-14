@@ -32,12 +32,20 @@ public class ThreadViewerServerPlugin implements ServicePlugin {
 
     @Override
     public ExtensionPermission[] getExtensionPermissions() {
+        // operationNames must be the @MirthOperation names from
+        // ThreadViewerServletInterface — an authorization plugin (e.g. RBAC)
+        // keys enforcement on them, so a placeholder here leaves every
+        // operation unmapped and therefore permitted to any authenticated
+        // user. The task name gates the web UI's dashboard tab through the
+        // extension task-permission merge.
         return new ExtensionPermission[] {
             new ExtensionPermission(
                 ThreadViewerServletInterface.PLUGIN_POINT,
                 ThreadViewerServletInterface.PERMISSION_VIEW,
                 "View active JVM threads and stack traces",
-                new String[] { "ADMIN" }, null)
+                new String[] { "activateMonitoring", "deactivateMonitoring",
+                        "getThreadSnapshot", "isMonitoringActive" },
+                new String[] { "doShowThreadViewer" })
         };
     }
 }

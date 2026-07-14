@@ -18,19 +18,21 @@ import io.swagger.annotations.ApiOperation;
 /**
  * Shared servlet interface for the Thread Viewer plugin.
  *
- * Follows the Mirth Connect 4.5.2 plugin pattern established in 3.4.0:
+ * Follows the OIE 4.6.0 plugin pattern established in 3.4.0:
  *   - Extends BaseServletInterface
  *   - Uses Swagger 2 annotations (@Api, @ApiOperation)
- *   - XML media type (XStream serialization)
+ *   - XML and JSON media types (XStream serialization) — the Swing client
+ *     negotiates XML; the OIE Web Administrator negotiates JSON
  *   - MirthOperation for permission control
  *
  * Client calls: mirthClient.getServlet(ThreadViewerServletInterface.class).method()
  * Server implements: ThreadViewerServlet extends MirthServlet implements this
+ * Web client calls: GET/POST /api/extensions/threadviewer/* (see package/webadmin)
  */
 @Path("/extensions/threadviewer")
 @Api("Extension Services")
-@Consumes(MediaType.APPLICATION_XML)
-@Produces(MediaType.APPLICATION_XML)
+@Consumes({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
+@Produces({MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML})
 public interface ThreadViewerServletInterface extends BaseServletInterface {
 
     public static final String PLUGIN_POINT = "Thread Viewer";
