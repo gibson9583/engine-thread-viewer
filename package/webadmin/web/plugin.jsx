@@ -630,6 +630,10 @@ export function register(platform) {
         id: 'thread-viewer',
         label: 'Thread Viewer',
         order: 40,
+        // Declared in ThreadViewerServerPlugin's ExtensionPermission taskNames →
+        // "View Thread Viewer". RBAC hides the tab for roles without it; with no
+        // RBAC plugin the tab is always visible.
+        task: 'doShowThreadViewer',
         component: ThreadViewerTab
     });
 }

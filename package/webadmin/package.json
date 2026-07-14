@@ -1,6 +1,6 @@
 {
     "name": "thread-viewer-webadmin",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "private": true,
     "type": "module",
     "description": "Build for the Thread Viewer web administrator plugin (compiles web/plugin.jsx to web/plugin.js).",
