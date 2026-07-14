@@ -1,7 +1,7 @@
 # Publishes the plugin to GitHub Releases in the shape the OIE Community Store
 # expects (extension zip + .sha256 sidecar), on a semver tag:
 #
-#   git tag v1.0.5 && git push origin v1.0.5
+#   git tag v1.0.6 && git push origin v1.0.6
 #
 # The tag drives the Maven version via -Drevision, so plugin.xml's pluginVersion
 # (what the engine reports as "installed") matches oie.json, keeping the store's
@@ -62,21 +62,20 @@ jobs:
         if: steps.oie-cache.outputs.cache-hit != 'true'
         run: curl -fSL -o "$OIE_TARBALL" "https://github.com/OpenIntegrationEngine/engine/releases/download/${OIE_TAG}/${OIE_TARBALL}"
 
-      # The same five jars scripts/install-engine-jars.sh installs from a local
-      # engine checkout, taken from the published distribution instead.
+      # The same four jars scripts/install-engine-jars.sh installs from a local
+      # engine checkout (the set the module poms depend on), taken from the
+      # published distribution instead.
       - name: Install engine jars into the local Maven repo
         run: |
           tar xzf "$OIE_TARBALL" \
             oie/server-lib/mirth-server.jar \
-            oie/server-lib/mirth-crypto.jar \
             oie/server-lib/mirth-client-core.jar \
-            oie/server-lib/donkey/donkey-server.jar \
+            oie/server-lib/donkey/donkey-model.jar \
             oie/client-lib/mirth-client.jar
           for pair in \
             "mirth-server:oie/server-lib/mirth-server.jar" \
-            "mirth-crypto:oie/server-lib/mirth-crypto.jar" \
             "mirth-client-core:oie/server-lib/mirth-client-core.jar" \
-            "donkey-server:oie/server-lib/donkey/donkey-server.jar" \
+            "donkey-model:oie/server-lib/donkey/donkey-model.jar" \
             "mirth-client:oie/client-lib/mirth-client.jar"; do
             a="${pair%%:*}"; p="${pair#*:}"
             mvn -q install:install-file -Dfile="$p" -DgroupId=com.mirth.connect -DartifactId="$a" -Dversion="$MC_VERSION" -Dpackaging=jar
