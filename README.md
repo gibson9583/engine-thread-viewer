@@ -100,7 +100,9 @@ status table with the same features as the Swing panel:
 
 - Start/Stop monitoring, Refresh Now, and jstack-compatible **Export Thread Dump**
 - Search, channel, association, category, and state filters; sortable columns (lifetime CPU descending by default)
-- Open details with the Details button, row double-click, or keyboard; details follow the selected thread
+- Click a row or press Space to select it; open it with the toolbar Details button,
+  double-click, or Enter. Details follow that thread across refreshes. The toolbar
+  action is disabled when the selected thread disappears or is filtered out.
 - DEADLOCK DETECTED banner when `ThreadMXBean` reports a deadlock
 - Thread data is retained after Stop for browsing and export
 

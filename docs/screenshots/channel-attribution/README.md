@@ -7,8 +7,9 @@ isolated OIE 4.6.0 validation run on September 22, 2026. All channel names and I
 are synthetic test data; this is not a currently connected engine session.
 
 - [Dashboard overview](web-dashboard-overview.png): compact filters, host-styled
-  sortable headers, numeric cells, and small Details buttons alongside the
-  existing dashboard controls.
+  sortable headers, numeric cells, and one toolbar Details action for the
+  highlighted thread. Click or Space selects a row; double-click or Enter opens
+  it. Details is disabled when selection is empty, hidden, or removed.
 - [Channel ownership](web-channel-ownership.png): the stable channel filter
   selects `TV Review JS Poll`, while `Channel ownership` identifies its idle
   polling scheduler. The snapshot remains available after monitoring
@@ -24,7 +25,8 @@ are synthetic test data; this is not a currently connected engine session.
 Captures use Chromium at 1600×1000 with the real dashboard splitter expanding
 its dock. There are no screenshot-only CSS overrides. Additional checks cover
 its default 230px dock, 1000px and 800px viewports, both themes, keyboard sorting
-and Details activation, long labels, empty results, and filter clearing. The
+and Details activation, selection across refreshes, hidden/removed selection,
+long labels, empty results, and filter clearing. The
 host Server Log tab supplies a direct styling reference. Detail timestamps use
 the host's timezone-aware formatter.
 
@@ -32,7 +34,7 @@ Capture inputs (SHA-256):
 
 | Input | SHA-256 |
 | --- | --- |
-| Shipped web bundle | `8f5e3c84b68694191e5cb1493c8cbd7ee5359984827c712537f6225e79f44557` |
+| Shipped web bundle | `a49a6962ebfd56d8df5c23efc4df0add2811e9d26c9f49a01aae33136042ef9b` |
 | Active JSON snapshot | `74c3747a3ceec9f8dab09cd5849a03eb1943b3502d683fb1c85474ab58ab57d5` |
 | Saved-rename JSON snapshot | `e0ec88e1ceeb9a8e2e40d8e145454747d82b1c63c6d3dcc16748c3d95fdc2e4b` |
 | Deployed-idle JSON snapshot | `2771544a677120246779a35f0c22256e714adc22077511bc9a7d922647dc8fa3` |

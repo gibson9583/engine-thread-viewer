@@ -70,17 +70,24 @@ const store = {
     snapshot: null,        // last normalized snapshot — retained after Stop
     error: null,           // last fetch error message
     notInstalledStatus: null,
-    // Filters + sort survive re-mounts too (the tab re-mounts on every
+    // Filters, sort and selection survive re-mounts too (the tab re-mounts on every
     // dashboard selection change).
     filters: { search: '', channel: '', category: '', state: '', association: '' },
     sort: { key: 'cpu', dir: 'desc' },
+    selectedThreadId: null,
     listeners: new Set(),
     timer: null,
     fetching: false,
     synced: false
 };
 
-function emit() { store.listeners.forEach(fn => fn()); }
+function emit() {
+    // A hidden/removed row must not leave an actionable, invisible selection.
+    if (store.selectedThreadId !== null && !visibleThread(store.selectedThreadId)) {
+        store.selectedThreadId = null;
+    }
+    store.listeners.forEach(fn => fn());
+}
 
 /* ---- resizable columns (persisted like the host's column manager) ---------- */
 
@@ -228,6 +235,31 @@ function filteredThreads() {
         return sign * cmp;
     });
     return rows;
+}
+
+function visibleThread(threadId) {
+    if (threadId === null || store.notInstalledStatus !== null) return null;
+    const thread = store.snapshot?.threads.find(t => t.threadId === threadId);
+    // Check only this row against the filters; no need to search every stack or
+    // sort the table again when selecting a thread or resizing a column.
+    return thread && filterThreads({ threads: [thread] }, store.filters).length ? thread : null;
+}
+
+function selectThread(threadId) {
+    const thread = visibleThread(threadId);
+    if (!thread) return null;
+    if (store.selectedThreadId !== thread.threadId) {
+        store.selectedThreadId = thread.threadId;
+        emit();
+    }
+    return thread;
+}
+
+function openThread(threadId) {
+    // Resolve by ID at action time: a poll may have replaced the rendered row's
+    // sample, reassigned its worker, or removed it before the event is handled.
+    const thread = selectThread(threadId);
+    if (thread) showDetail(thread);
 }
 
 /* ---- state coloring (Swing StateCellRenderer) ----------------------------- */
@@ -396,20 +428,20 @@ const COLUMNS = [
 function ThreadRow({ t }) {
     const color = stateColor(t.state);
     return (
-        <tr className="cursor-pointer" title="Double-click or press Enter for details and the stack trace"
+        <tr className={'cursor-pointer' + (store.selectedThreadId === t.threadId ? ' selected' : '')}
+            title="Click or press Space to select; double-click or press Enter for details and the stack trace"
             tabIndex={0} aria-label={`Thread ${t.name}, ${t.state}`}
+            aria-selected={store.selectedThreadId === t.threadId}
+            onClick={() => selectThread(t.threadId)}
             onKeyDown={e => {
                 if (e.target !== e.currentTarget) return;
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showDetail(t); }
-            }} onDoubleClick={() => showDetail(t)}>
-            <td className="max-w-0 mono text-[12px]">
-                <div className="flex items-center gap-2 min-w-0">
-                    <span className="truncate flex-1 min-w-0" title={t.name}>{t.name}</span>
-                    <button type="button" className="btn btn-sm thread-viewer-details" aria-label={`Details for thread ${t.name}`}
-                        onClick={e => { e.stopPropagation(); showDetail(t); }}
-                        onDoubleClick={e => e.stopPropagation()}>Details</button>
-                </div>
-            </td>
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (e.key === ' ') selectThread(t.threadId);
+                    else if (!e.repeat) openThread(t.threadId);
+                }
+            }} onDoubleClick={() => openThread(t.threadId)}>
+            <td className="truncate mono text-[12px]" title={t.name}>{t.name}</td>
             <td className="whitespace-nowrap font-[650] text-[12px]" style={color ? { color } : null}>
                 {t.state}{t.deadlocked ? ' ⚠' : ''}
             </td>
@@ -507,6 +539,12 @@ function ThreadViewerTab() {
                 <button type="button" className="btn btn-sm" disabled={!snapshot || !snapshot.threads.length}
                     title="Export a jstack-compatible thread dump" onClick={exportThreadDump}>
                     Export Thread Dump
+                </button>
+                <button type="button" className="btn btn-sm"
+                    disabled={!!emptyText || !rows.some(t => t.threadId === store.selectedThreadId)}
+                    title="Open the selected thread's details and stack trace"
+                    onClick={() => openThread(store.selectedThreadId)}>
+                    Details
                 </button>
                 <span className="sep" />
                 <input type="text" placeholder="Search threads / stacks…" aria-label="Search thread, channel, connector, role or stack trace"

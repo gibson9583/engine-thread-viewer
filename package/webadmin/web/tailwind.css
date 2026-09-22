@@ -49,13 +49,6 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.thread-viewer .thread-viewer-details {
-  flex: none;
-  height: 22px;
-  padding: 0 6px;
-  font-family: var(--font-ui);
-  font-size: 10.5px;
-}
 .thread-viewer .thread-viewer-sort {
   appearance: none;
   display: flex;

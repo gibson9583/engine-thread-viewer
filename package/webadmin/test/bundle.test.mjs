@@ -50,6 +50,15 @@ const collect = (tree, predicate) => {
     return matches;
 };
 const textContent = tree => typeof tree === 'string' ? tree : tree?.children?.map(textContent).join(' ') || '';
+const detailsButton = f => {
+    const buttons = collect(f.ThreadViewerTab(), n => n.type === 'button' && n.children.includes('Details'));
+    assert.equal(buttons.length, 1, 'There is one Details action in the toolbar');
+    return buttons[0];
+};
+const keyEvent = (key, extra = {}) => {
+    const target = {};
+    return { key, target, currentTarget: target, preventDefault() {}, ...extra };
+};
 
 test('compiled table exposes stable filter IDs, keyboard sorting and horizontal scroll', () => {
     const f = fixture('{"name":5000,"state":"bad","cpu":-1}');
@@ -77,26 +86,129 @@ test('compiled table exposes stable filter IDs, keyboard sorting and horizontal 
     f.dialogs[0].onClose();
 });
 
-test('visible Details button opens once without bubbling keyboard activation to the row', () => {
+test('click and Space select a row; the single toolbar Details action opens the selected thread', () => {
     const f = fixture();
     f.store.snapshot = f.normalizeSnapshot(raw());
     const row = f.ThreadRow({ t: f.store.snapshot.threads[0] });
-    const details = collect(row, n => n.type === 'button' && n.children.includes('Details'))[0];
-    assert.ok(details);
-    assert.equal(details.props['aria-label'], 'Details for thread Original');
-    let stopped = false;
-    const rowElement = {}, buttonElement = {};
-    row.props.onKeyDown({ key: 'Enter', target: buttonElement, currentTarget: rowElement,
-        preventDefault: () => assert.fail('Row must not handle the button key event') });
+    assert.equal(collect(row, n => n.type === 'button').length, 0);
+    assert.equal(row.props['aria-selected'], false);
+    assert.equal(detailsButton(f).props.disabled, true);
+    row.props.onClick();
+    assert.equal(f.store.selectedThreadId, 90);
     assert.equal(f.dialogs.length, 0);
-    details.props.onClick({ stopPropagation: () => { stopped = true; } });
-    assert.equal(stopped, true);
+    const selected = f.ThreadRow({ t: f.store.snapshot.threads[0] });
+    assert.equal(selected.props['aria-selected'], true);
+    assert.match(selected.props.className, /\bselected\b/);
+    assert.equal(detailsButton(f).props.disabled, false);
+    detailsButton(f).props.onClick();
     assert.equal(f.dialogs.length, 1);
-    stopped = false;
-    details.props.onDoubleClick({ stopPropagation: () => { stopped = true; } });
-    assert.equal(stopped, true);
-    assert.equal(f.dialogs.length, 1);
+    assert.match(f.dialogs[0].title, /id=90/);
     f.dialogs[0].onClose();
+    f.store.selectedThreadId = null;
+    let prevented = false;
+    row.props.onKeyDown(keyEvent(' ', { preventDefault: () => { prevented = true; } }));
+    assert.equal(prevented, true);
+    assert.equal(f.store.selectedThreadId, 90);
+    assert.equal(f.dialogs.length, 1);
+});
+
+test('double-click and Enter select and activate once; key repeats and descendant events do not activate', () => {
+    const f = fixture();
+    f.store.snapshot = f.normalizeSnapshot(raw());
+    const row = f.ThreadRow({ t: f.store.snapshot.threads[0] });
+    let selectionRenders = 0;
+    const onSelection = () => { selectionRenders++; };
+    f.store.listeners.add(onSelection);
+    row.props.onClick();
+    row.props.onClick();
+    assert.equal(f.dialogs.length, 0);
+    row.props.onDoubleClick();
+    assert.equal(f.dialogs.length, 1);
+    assert.equal(f.store.selectedThreadId, 90);
+    assert.equal(selectionRenders, 1, 'Double-click only redraws selection once');
+    f.store.listeners.delete(onSelection);
+    f.dialogs[0].onClose();
+    f.store.selectedThreadId = null;
+    row.props.onKeyDown(keyEvent('Enter', { repeat: true }));
+    row.props.onKeyDown(keyEvent('Enter', { target: {},
+        preventDefault: () => assert.fail('Ignore descendant key events') }));
+    assert.equal(f.dialogs.length, 1);
+    row.props.onKeyDown(keyEvent('Enter'));
+    assert.equal(f.dialogs.length, 2);
+    assert.equal(f.store.selectedThreadId, 90);
+    f.dialogs[1].onClose();
+    assert.equal(f.store.listeners.size, 0);
+});
+
+test('selection survives sorting, reassignment, stopped monitoring and transient errors; actions use current state', () => {
+    const f = fixture();
+    f.store.snapshot = f.normalizeSnapshot(raw());
+    const staleRow = f.ThreadRow({ t: f.store.snapshot.threads[0] });
+    staleRow.props.onClick();
+    const staleButton = detailsButton(f);
+    const next = raw('Reassigned', 'channel-2');
+    next.threads.push({ ...raw('Other').threads[0], threadId: 91 });
+    f.store.snapshot = f.normalizeSnapshot(next);
+    f.store.error = 'Temporary disconnect';
+    f.emit();
+    const tree = f.ThreadViewerTab();
+    collect(tree, n => n.type === 'button' && n.props['aria-label'] === 'Sort by Thread Name')[0].props.onClick();
+    assert.equal(f.store.selectedThreadId, 90);
+    assert.equal(detailsButton(f).props.disabled, false);
+    staleRow.props.onDoubleClick();
+    assert.match(textContent(f.dialogs[0].body), /Reassigned/);
+    assert.doesNotMatch(textContent(f.dialogs[0].body), /Original/);
+    f.dialogs[0].onClose();
+    f.ThreadRow({ t: f.store.snapshot.threads[1] }).props.onClick();
+    staleButton.props.onClick();
+    assert.match(f.dialogs[1].title, /id=91/);
+    f.dialogs[1].onClose();
+});
+
+test('filtering, disappearance and an unavailable plugin clear selection without later resurrection', () => {
+    for (const change of ['filter', 'removed', 'not-installed', 'no-snapshot']) {
+        const f = fixture();
+        f.store.snapshot = f.normalizeSnapshot(raw());
+        f.ThreadRow({ t: f.store.snapshot.threads[0] }).props.onClick();
+        if (change === 'filter') {
+            const search = collect(f.ThreadViewerTab(), n => n.type === 'input')[0];
+            search.props.onChange({ target: { value: 'no matching thread' } });
+        } else {
+            if (change === 'removed') f.store.snapshot = f.normalizeSnapshot({ threads: [] });
+            if (change === 'not-installed') f.store.notInstalledStatus = 404;
+            if (change === 'no-snapshot') f.store.snapshot = null;
+            f.emit();
+        }
+        assert.equal(f.store.selectedThreadId, null, change);
+        assert.equal(detailsButton(f).props.disabled, true, change);
+        f.store.filters.search = '';
+        f.store.notInstalledStatus = null;
+        f.store.snapshot = f.normalizeSnapshot(raw());
+        f.emit();
+        assert.equal(detailsButton(f).props.disabled, true, change);
+        assert.equal(f.dialogs.length, 0);
+    }
+});
+
+test('stale row and toolbar callbacks cannot open a thread that is gone or hidden before render', () => {
+    for (const change of ['filter', 'removed', 'not-installed', 'reassigned-outside-filter']) {
+        const f = fixture();
+        f.store.snapshot = f.normalizeSnapshot(raw());
+        f.store.filters.channel = 'channel-1';
+        const staleRow = f.ThreadRow({ t: f.store.snapshot.threads[0] });
+        staleRow.props.onClick();
+        const staleButton = detailsButton(f);
+        if (change === 'filter') f.store.filters.search = 'no matching thread';
+        if (change === 'removed') f.store.snapshot = f.normalizeSnapshot({ threads: [] });
+        if (change === 'not-installed') f.store.notInstalledStatus = 404;
+        if (change === 'reassigned-outside-filter') f.store.snapshot = f.normalizeSnapshot(raw('New channel', 'channel-2'));
+        // Deliberately do not emit/re-render: handlers must re-check action-time state.
+        staleButton.props.onClick();
+        staleRow.props.onDoubleClick();
+        staleRow.props.onKeyDown(keyEvent('Enter'));
+        assert.equal(f.dialogs.length, 0, change);
+        assert.equal(detailsButton(f).props.disabled, true, change);
+    }
 });
 
 test('detail dialog follows reassignment by thread ID, copies the displayed sample and releases its listener', async () => {
