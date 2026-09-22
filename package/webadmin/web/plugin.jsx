@@ -44,7 +44,7 @@ import { asBool, decodeSnapshot, channelOptions,
 
 const React = platform.React;
 const api = platform.api;
-const { h, modal, toast, downloadFile } = platform.ui;
+const { h, modal, toast, downloadFile, fmtDate } = platform.ui;
 
 const EXT = '/extensions/threadviewer';
 const POLL_MS = 5000;
@@ -259,9 +259,7 @@ function showDetail(initialThread) {
     let capturedAt = store.snapshot?.timestamp;
     let previousSnapshot, previousMonitoring, previousError;
     const body = h('div', { class: 'flex flex-col gap-2 min-w-0' });
-    const infoRow = (label, value) => h('div', { class: 'flex gap-2 text-[12px]' },
-        h('span', { class: 'text-text-faint min-w-[100px] flex-none' }, label),
-        h('span', { class: 'mono [word-break:break-all]' }, value));
+    const infoRow = (label, value) => [h('dt', label), h('dd', value)];
     const render = () => {
         // Filter/sort/column-width changes do not change a thread's details.
         if (previousSnapshot === store.snapshot && previousMonitoring === store.monitoring
@@ -277,19 +275,17 @@ function showDetail(initialThread) {
         }
         const t = thread;
         const color = stateColor(t.state);
+        const status = h('div', { class: 'text-text-faint', role: 'status' },
+            `${store.error && store.monitoring ? 'Snapshot unavailable; retained sample: ' + store.error
+                : present ? (store.monitoring ? 'Following this thread' : 'Monitoring stopped; retained sample')
+                : 'Thread no longer present; showing its last captured sample'}. `
+            + (capturedAt ? `Captured ${fmtDate(capturedAt)}.` : ''));
         const info = [
-            h('div', { class: 'text-[12px] text-text-faint', role: 'status' },
-                `${store.error && store.monitoring ? 'Snapshot unavailable; retained sample: ' + store.error
-                    : present ? (store.monitoring ? 'Following this thread' : 'Monitoring stopped; retained sample')
-                    : 'Thread no longer present; showing its last captured sample'}. `
-                + (capturedAt ? `Captured ${new Date(capturedAt).toLocaleString()}.` : '')),
             infoRow('Name', t.name),
             infoRow('State', h('span', { class: 'font-[650]', style: color ? { color } : null },
                 t.state + (t.deadlocked ? '  — DEADLOCKED' : ''))),
             infoRow('Daemon', `${t.daemon}  |  Priority: ${t.priority}  |  Group: ${t.threadGroup ?? ''}`),
             infoRow('Lifetime CPU', `${formatTimeNanos(t.cpuTimeNanos)}  |  Lifetime user time: ${formatTimeNanos(t.userTimeNanos)}`),
-            h('div', { class: 'text-[12px] text-text-faint' },
-                'CPU/user totals belong to this thread, including work for previous channels.'),
             infoRow('Contention', `Blocked: ${t.blockedCount} (${formatTimeMs(t.blockedTimeMs)})  |  Waited: ${t.waitedCount} (${formatTimeMs(t.waitedTimeMs)})`)
         ];
         for (const line of attributionLines(t)) {
@@ -300,7 +296,9 @@ function showDetail(initialThread) {
             info.push(infoRow('Waiting on', t.lockName));
             if (t.lockOwnerId >= 0) info.push(infoRow('Lock owner', `${t.lockOwnerName} (id=${t.lockOwnerId})`));
         }
-        body.replaceChildren(...info,
+        body.replaceChildren(status, h('dl.kv', { class: 'm-0' }, ...info),
+            h('div', { class: 'text-text-faint' },
+                'CPU/user totals belong to this thread, including work for previous channels.'),
             h('div', { class: 'font-semibold mt-1' }, `Stack Trace (${t.stackTrace.length} frames)`),
             h('pre', { class: 'm-0 whitespace-pre-wrap [word-break:break-word] overflow-x-hidden overflow-y-auto bg-bg0 text-text border border-[var(--bg3)] p-2 rounded-[4px] text-[12px] max-h-[55vh]' },
                 t.stackTrace.length ? t.stackTrace.map(f => '    at ' + f).join('\n') : '(no frames)'));
@@ -407,7 +405,7 @@ function ThreadRow({ t }) {
             <td className="max-w-0 mono text-[12px]">
                 <div className="flex items-center gap-2 min-w-0">
                     <span className="truncate flex-1 min-w-0" title={t.name}>{t.name}</span>
-                    <button className="btn flex-none text-[12px]" aria-label={`Details for thread ${t.name}`}
+                    <button type="button" className="btn btn-sm thread-viewer-details" aria-label={`Details for thread ${t.name}`}
                         onClick={e => { e.stopPropagation(); showDetail(t); }}
                         onDoubleClick={e => e.stopPropagation()}>Details</button>
                 </div>
@@ -415,10 +413,10 @@ function ThreadRow({ t }) {
             <td className="whitespace-nowrap font-[650] text-[12px]" style={color ? { color } : null}>
                 {t.state}{t.deadlocked ? ' ⚠' : ''}
             </td>
-            <td className="text-right mono text-[12px]">{t.cpuMs >= 0 ? t.cpuMs : '—'}</td>
+            <td className="num">{t.cpuMs >= 0 ? t.cpuMs : '—'}</td>
             <td className="whitespace-nowrap text-[12px]">{t.category}</td>
-            <td className="text-right mono text-[12px]">{t.blockedCount}</td>
-            <td className="text-right mono text-[12px]">{t.waitedCount}</td>
+            <td className="num">{t.blockedCount}</td>
+            <td className="num">{t.waitedCount}</td>
             <td className="truncate text-[12px]" title={`${t.channelName || ''} [${t.channelId || 'unassigned'}]${t.savedChannelName && t.savedChannelName !== t.channelName ? `; saved name: ${t.savedChannelName}` : ''}`}>{t.channelName || t.channelId || ''}</td>
             <td className="truncate text-[12px]" title={`${associationLabel(t.associationKind)}; ${t.resolutionStatus}${t.matchReason ? ': ' + t.matchReason : ''}`}>{associationLabel(t.associationKind)}</td>
             <td className="truncate text-[12px]" title={t.role || ''}>{t.role || ''}</td>
@@ -493,61 +491,59 @@ function ThreadViewerTab() {
         emptyText = 'No threads match the current filters.';
     }
 
-    const selectClass = 'h-[24px] py-0 px-1 text-[12px]';
-
     return (
-        <div className="flex flex-col h-full min-h-0">
+        <div className="thread-viewer-panel flex flex-col h-full min-h-0">
             {/* toolbar: monitoring controls + filters + status */}
-            <div className="taskbar flex items-center gap-1.5 flex-wrap py-[3px] px-2 flex-none text-[12px] z-[2] bg-bg1 border-b border-[var(--bg3)]">
-                <button className={'btn text-[12px] ' + (monitoring ? '' : 'btn-primary')}
+            <div className="taskbar thread-viewer-toolbar">
+                <button type="button" className={'btn btn-sm ' + (monitoring ? '' : 'btn-primary')}
                     disabled={starting}
                     onClick={monitoring ? stopMonitoring : startMonitoring}>
                     {monitoring ? 'Stop Monitoring' : 'Start Monitoring'}
                 </button>
-                <button className="btn text-[12px]" disabled={!monitoring}
+                <button type="button" className="btn btn-sm" disabled={!monitoring}
                     title="Fetch a snapshot now" onClick={fetchSnapshot}>
                     Refresh Now
                 </button>
-                <button className="btn text-[12px]" disabled={!snapshot || !snapshot.threads.length}
+                <button type="button" className="btn btn-sm" disabled={!snapshot || !snapshot.threads.length}
                     title="Export a jstack-compatible thread dump" onClick={exportThreadDump}>
                     Export Thread Dump
                 </button>
                 <span className="sep" />
                 <input type="text" placeholder="Search threads / stacks…" aria-label="Search thread, channel, connector, role or stack trace"
-                    className="w-[170px] h-[24px] py-0 px-1 text-[12px]"
+                    className="thread-viewer-search"
                     value={filters.search}
                     onChange={(e) => setFilter('search', e.target.value)} />
-                <select className={selectClass} value={filters.channel}
+                <select value={filters.channel}
                     title="Filter by stable channel ID" aria-label="Filter by channel"
                     onChange={(e) => setFilter('channel', e.target.value)}>
                     <option value="">All Channels</option>
                     {channels.map(c => <option key={c.id} value={c.id} title={c.title}>{c.label}</option>)}
                 </select>
-                <select className={selectClass} value={filters.category}
+                <select value={filters.category}
                     title="Filter by thread category" aria-label="Filter by thread category"
                     onChange={(e) => setFilter('category', e.target.value)}>
                     <option value="">All Categories</option>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                <select className={selectClass} value={filters.state}
+                <select value={filters.state}
                     title="Filter by thread state" aria-label="Filter by thread state"
                     onChange={(e) => setFilter('state', e.target.value)}>
                     <option value="">All States</option>
                     {STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <select className={selectClass} value={filters.association}
+                <select value={filters.association}
                     title="Current execution, persistent channel ownership, or channel management"
                     aria-label="Filter by channel association"
                     onChange={e => setFilter('association', e.target.value)}>
                     <option value="">All Associations</option>
                     {associations.map(kind => <option key={kind} value={kind}>{associationLabel(kind)}</option>)}
                 </select>
-                <button className="btn text-[12px]" onClick={clearFilters}>Clear Filters</button>
+                <button type="button" className="btn btn-sm" onClick={clearFilters}>Clear Filters</button>
                 <span className="flex-1" />
                 {snapshot && snapshot.deadlockDetected && (
                     <span className="text-err font-bold">DEADLOCK DETECTED</span>
                 )}
-                <span className={error && monitoring ? 'text-err' : 'text-text-faint'}>{status}</span>
+                <span role="status" className={'thread-viewer-status ' + (error && monitoring ? 'text-err' : 'text-text-faint')}>{status}</span>
             </div>
 
             {/* scrollable thread table */}
@@ -566,14 +562,13 @@ function ThreadViewerTab() {
                         <tr>
                             {COLUMNS.map((col, i) => (
                                 <th key={col.key}
-                                    className={'sticky top-0 z-[1] bg-bg1 cursor-pointer select-none whitespace-nowrap'
-                                        + (col.num ? ' text-right' : '')}
+                                    className="sortable"
                                     title={col.title || ('Sort by ' + col.label)}
                                     aria-sort={sort.key === col.key ? (sort.dir === 'desc' ? 'descending' : 'ascending') : 'none'}>
-                                    <button className="w-full text-left cursor-pointer" onClick={() => setSort(col.key)}
+                                    <button type="button" className="thread-viewer-sort" onClick={() => setSort(col.key)}
                                         aria-label={'Sort by ' + col.label}>
                                     {col.label}
-                                    {sort.key === col.key ? (sort.dir === 'desc' ? ' ▾' : ' ▴') : ''}
+                                    {sort.key === col.key ? <span className="sort-arrow" aria-hidden="true">{sort.dir === 'desc' ? '▼' : '▲'}</span> : null}
                                     </button>
                                     {i < COLUMNS.length - 1 ? (
                                         <div className="col-resize" title=""

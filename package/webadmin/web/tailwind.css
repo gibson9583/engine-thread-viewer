@@ -20,3 +20,61 @@
   --font-mono: var(--font-mono);
 }
 @source "./plugin.jsx";
+
+/* Keep the host's controls, table typography and theme tokens. Only the dock's
+   sizing and accessible sort-button reset need plugin-specific rules. Scoped,
+   unlayered rules also work with hosts whose form rules are unlayered. */
+.thread-viewer-panel .thread-viewer-toolbar {
+  flex: none;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg2);
+  font-size: 11px;
+}
+.thread-viewer-toolbar select {
+  width: auto;
+  max-width: min(240px, 100%);
+  min-width: 0;
+  height: 31px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.thread-viewer-toolbar input.thread-viewer-search {
+  width: 180px;
+  max-width: 100%;
+  min-width: 0;
+  height: 31px;
+}
+.thread-viewer-toolbar .thread-viewer-status {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.thread-viewer .thread-viewer-details {
+  flex: none;
+  height: 22px;
+  padding: 0 6px;
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+}
+.thread-viewer .thread-viewer-sort {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.thread-viewer .thread-viewer-sort:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 2px;
+}

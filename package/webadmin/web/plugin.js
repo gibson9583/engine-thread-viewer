@@ -2,7 +2,7 @@
 import { platform } from "@oie/web-shell";
 
 // web/tv-css.generated.js
-var TV_CSS = '/*! tailwindcss v4.3.2 | MIT License | https://tailwindcss.com */\n@layer properties;\n@layer theme, utilities;\n@layer theme {\n  :root, :host {\n    --font-mono: var(--font-mono);\n    --spacing: 0.25rem;\n    --font-weight-semibold: 600;\n    --font-weight-bold: 700;\n  }\n}\n@layer utilities {\n  .invisible {\n    visibility: hidden;\n  }\n  .visible {\n    visibility: visible;\n  }\n  .sticky {\n    position: sticky;\n  }\n  .top-0 {\n    top: 0;\n  }\n  .z-\\[1\\] {\n    z-index: 1;\n  }\n  .z-\\[2\\] {\n    z-index: 2;\n  }\n  .m-0 {\n    margin: 0;\n  }\n  .mt-1 {\n    margin-top: var(--spacing);\n  }\n  .flex {\n    display: flex;\n  }\n  .table {\n    display: table;\n  }\n  .h-\\[24px\\] {\n    height: 24px;\n  }\n  .h-full {\n    height: 100%;\n  }\n  .max-h-\\[55vh\\] {\n    max-height: 55vh;\n  }\n  .min-h-0 {\n    min-height: 0;\n  }\n  .w-\\[170px\\] {\n    width: 170px;\n  }\n  .w-full {\n    width: 100%;\n  }\n  .max-w-0 {\n    max-width: 0;\n  }\n  .min-w-0 {\n    min-width: 0;\n  }\n  .min-w-\\[100px\\] {\n    min-width: 100px;\n  }\n  .flex-1 {\n    flex: 1;\n  }\n  .flex-none {\n    flex: none;\n  }\n  .table-fixed {\n    table-layout: fixed;\n  }\n  .transform {\n    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);\n  }\n  .cursor-pointer {\n    cursor: pointer;\n  }\n  .flex-col {\n    flex-direction: column;\n  }\n  .flex-wrap {\n    flex-wrap: wrap;\n  }\n  .items-center {\n    align-items: center;\n  }\n  .gap-1 {\n    gap: var(--spacing);\n  }\n  .gap-1\\.5 {\n    gap: calc(var(--spacing) * 1.5);\n  }\n  .gap-2 {\n    gap: calc(var(--spacing) * 2);\n  }\n  .truncate {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n  .overflow-auto {\n    overflow: auto;\n  }\n  .overflow-x-hidden {\n    overflow-x: hidden;\n  }\n  .overflow-y-auto {\n    overflow-y: auto;\n  }\n  .rounded-\\[4px\\] {\n    border-radius: 4px;\n  }\n  .border {\n    border-style: var(--tw-border-style);\n    border-width: 1px;\n  }\n  .border-b {\n    border-bottom-style: var(--tw-border-style);\n    border-bottom-width: 1px;\n  }\n  .border-\\[var\\(--bg3\\)\\] {\n    border-color: var(--bg3);\n  }\n  .bg-bg0 {\n    background-color: var(--bg0);\n  }\n  .bg-bg1 {\n    background-color: var(--bg1);\n  }\n  .p-2 {\n    padding: calc(var(--spacing) * 2);\n  }\n  .p-3 {\n    padding: calc(var(--spacing) * 3);\n  }\n  .px-1 {\n    padding-inline: var(--spacing);\n  }\n  .px-2 {\n    padding-inline: calc(var(--spacing) * 2);\n  }\n  .py-0 {\n    padding-block: 0;\n  }\n  .py-\\[3px\\] {\n    padding-block: 3px;\n  }\n  .text-left {\n    text-align: left;\n  }\n  .text-right {\n    text-align: right;\n  }\n  .text-\\[12px\\] {\n    font-size: 12px;\n  }\n  .font-\\[650\\] {\n    --tw-font-weight: 650;\n    font-weight: 650;\n  }\n  .font-bold {\n    --tw-font-weight: var(--font-weight-bold);\n    font-weight: var(--font-weight-bold);\n  }\n  .font-semibold {\n    --tw-font-weight: var(--font-weight-semibold);\n    font-weight: var(--font-weight-semibold);\n  }\n  .\\[word-break\\:break-all\\] {\n    word-break: break-all;\n  }\n  .\\[word-break\\:break-word\\] {\n    word-break: break-word;\n  }\n  .whitespace-nowrap {\n    white-space: nowrap;\n  }\n  .whitespace-pre-wrap {\n    white-space: pre-wrap;\n  }\n  .text-err {\n    color: var(--err);\n  }\n  .text-text {\n    color: var(--text);\n  }\n  .text-text-faint {\n    color: var(--text-faint);\n  }\n  .filter {\n    filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);\n  }\n  .select-none {\n    -webkit-user-select: none;\n    user-select: none;\n  }\n}\n@property --tw-rotate-x {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-rotate-y {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-rotate-z {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-skew-x {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-skew-y {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-border-style {\n  syntax: "*";\n  inherits: false;\n  initial-value: solid;\n}\n@property --tw-font-weight {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-blur {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-brightness {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-contrast {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-grayscale {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-hue-rotate {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-invert {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-opacity {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-saturate {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-sepia {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-drop-shadow {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-drop-shadow-color {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-drop-shadow-alpha {\n  syntax: "<percentage>";\n  inherits: false;\n  initial-value: 100%;\n}\n@property --tw-drop-shadow-size {\n  syntax: "*";\n  inherits: false;\n}\n@layer properties {\n  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {\n    *, ::before, ::after, ::backdrop {\n      --tw-rotate-x: initial;\n      --tw-rotate-y: initial;\n      --tw-rotate-z: initial;\n      --tw-skew-x: initial;\n      --tw-skew-y: initial;\n      --tw-border-style: solid;\n      --tw-font-weight: initial;\n      --tw-blur: initial;\n      --tw-brightness: initial;\n      --tw-contrast: initial;\n      --tw-grayscale: initial;\n      --tw-hue-rotate: initial;\n      --tw-invert: initial;\n      --tw-opacity: initial;\n      --tw-saturate: initial;\n      --tw-sepia: initial;\n      --tw-drop-shadow: initial;\n      --tw-drop-shadow-color: initial;\n      --tw-drop-shadow-alpha: 100%;\n      --tw-drop-shadow-size: initial;\n    }\n  }\n}\n';
+var TV_CSS = '/*! tailwindcss v4.3.2 | MIT License | https://tailwindcss.com */\n@layer properties;\n@layer theme, utilities;\n@layer theme {\n  :root, :host {\n    --font-mono: var(--font-mono);\n    --spacing: 0.25rem;\n    --font-weight-semibold: 600;\n    --font-weight-bold: 700;\n  }\n}\n@layer utilities {\n  .invisible {\n    visibility: hidden;\n  }\n  .visible {\n    visibility: visible;\n  }\n  .sticky {\n    position: sticky;\n  }\n  .top-0 {\n    top: 0;\n  }\n  .m-0 {\n    margin: 0;\n  }\n  .mt-1 {\n    margin-top: var(--spacing);\n  }\n  .flex {\n    display: flex;\n  }\n  .table {\n    display: table;\n  }\n  .h-full {\n    height: 100%;\n  }\n  .max-h-\\[55vh\\] {\n    max-height: 55vh;\n  }\n  .min-h-0 {\n    min-height: 0;\n  }\n  .w-full {\n    width: 100%;\n  }\n  .max-w-0 {\n    max-width: 0;\n  }\n  .min-w-0 {\n    min-width: 0;\n  }\n  .flex-1 {\n    flex: 1;\n  }\n  .flex-none {\n    flex: none;\n  }\n  .table-fixed {\n    table-layout: fixed;\n  }\n  .transform {\n    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);\n  }\n  .cursor-pointer {\n    cursor: pointer;\n  }\n  .flex-col {\n    flex-direction: column;\n  }\n  .flex-wrap {\n    flex-wrap: wrap;\n  }\n  .items-center {\n    align-items: center;\n  }\n  .gap-1 {\n    gap: var(--spacing);\n  }\n  .gap-2 {\n    gap: calc(var(--spacing) * 2);\n  }\n  .truncate {\n    overflow: hidden;\n    text-overflow: ellipsis;\n    white-space: nowrap;\n  }\n  .overflow-auto {\n    overflow: auto;\n  }\n  .overflow-x-hidden {\n    overflow-x: hidden;\n  }\n  .overflow-y-auto {\n    overflow-y: auto;\n  }\n  .rounded-\\[4px\\] {\n    border-radius: 4px;\n  }\n  .border {\n    border-style: var(--tw-border-style);\n    border-width: 1px;\n  }\n  .border-b {\n    border-bottom-style: var(--tw-border-style);\n    border-bottom-width: 1px;\n  }\n  .border-\\[var\\(--bg3\\)\\] {\n    border-color: var(--bg3);\n  }\n  .bg-bg0 {\n    background-color: var(--bg0);\n  }\n  .bg-bg1 {\n    background-color: var(--bg1);\n  }\n  .p-2 {\n    padding: calc(var(--spacing) * 2);\n  }\n  .p-3 {\n    padding: calc(var(--spacing) * 3);\n  }\n  .px-1 {\n    padding-inline: var(--spacing);\n  }\n  .px-2 {\n    padding-inline: calc(var(--spacing) * 2);\n  }\n  .py-0 {\n    padding-block: 0;\n  }\n  .text-left {\n    text-align: left;\n  }\n  .text-right {\n    text-align: right;\n  }\n  .text-\\[12px\\] {\n    font-size: 12px;\n  }\n  .font-\\[650\\] {\n    --tw-font-weight: 650;\n    font-weight: 650;\n  }\n  .font-bold {\n    --tw-font-weight: var(--font-weight-bold);\n    font-weight: var(--font-weight-bold);\n  }\n  .font-semibold {\n    --tw-font-weight: var(--font-weight-semibold);\n    font-weight: var(--font-weight-semibold);\n  }\n  .\\[word-break\\:break-word\\] {\n    word-break: break-word;\n  }\n  .whitespace-nowrap {\n    white-space: nowrap;\n  }\n  .whitespace-pre-wrap {\n    white-space: pre-wrap;\n  }\n  .text-err {\n    color: var(--err);\n  }\n  .text-text {\n    color: var(--text);\n  }\n  .text-text-faint {\n    color: var(--text-faint);\n  }\n  .outline {\n    outline-style: var(--tw-outline-style);\n    outline-width: 1px;\n  }\n  .filter {\n    filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);\n  }\n  .select-none {\n    -webkit-user-select: none;\n    user-select: none;\n  }\n}\n.thread-viewer-panel .thread-viewer-toolbar {\n  flex: none;\n  gap: 6px;\n  padding: 6px 8px;\n  background: var(--bg2);\n  font-size: 11px;\n}\n.thread-viewer-toolbar select {\n  width: auto;\n  max-width: min(240px, 100%);\n  min-width: 0;\n  height: 31px;\n  padding-top: 0;\n  padding-bottom: 0;\n}\n.thread-viewer-toolbar input.thread-viewer-search {\n  width: 180px;\n  max-width: 100%;\n  min-width: 0;\n  height: 31px;\n}\n.thread-viewer-toolbar .thread-viewer-status {\n  min-width: 0;\n  overflow-wrap: anywhere;\n}\n.thread-viewer .thread-viewer-details {\n  flex: none;\n  height: 22px;\n  padding: 0 6px;\n  font-family: var(--font-ui);\n  font-size: 10.5px;\n}\n.thread-viewer .thread-viewer-sort {\n  appearance: none;\n  display: flex;\n  align-items: center;\n  width: 100%;\n  min-width: 0;\n  padding: 0;\n  border: 0;\n  background: none;\n  color: inherit;\n  font: inherit;\n  letter-spacing: inherit;\n  text-transform: inherit;\n  text-align: left;\n  white-space: nowrap;\n  cursor: pointer;\n}\n.thread-viewer .thread-viewer-sort:focus-visible {\n  outline: 2px solid var(--accent);\n  outline-offset: -2px;\n  border-radius: 2px;\n}\n@property --tw-rotate-x {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-rotate-y {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-rotate-z {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-skew-x {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-skew-y {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-border-style {\n  syntax: "*";\n  inherits: false;\n  initial-value: solid;\n}\n@property --tw-font-weight {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-outline-style {\n  syntax: "*";\n  inherits: false;\n  initial-value: solid;\n}\n@property --tw-blur {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-brightness {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-contrast {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-grayscale {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-hue-rotate {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-invert {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-opacity {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-saturate {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-sepia {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-drop-shadow {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-drop-shadow-color {\n  syntax: "*";\n  inherits: false;\n}\n@property --tw-drop-shadow-alpha {\n  syntax: "<percentage>";\n  inherits: false;\n  initial-value: 100%;\n}\n@property --tw-drop-shadow-size {\n  syntax: "*";\n  inherits: false;\n}\n@layer properties {\n  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {\n    *, ::before, ::after, ::backdrop {\n      --tw-rotate-x: initial;\n      --tw-rotate-y: initial;\n      --tw-rotate-z: initial;\n      --tw-skew-x: initial;\n      --tw-skew-y: initial;\n      --tw-border-style: solid;\n      --tw-font-weight: initial;\n      --tw-outline-style: solid;\n      --tw-blur: initial;\n      --tw-brightness: initial;\n      --tw-contrast: initial;\n      --tw-grayscale: initial;\n      --tw-hue-rotate: initial;\n      --tw-invert: initial;\n      --tw-opacity: initial;\n      --tw-saturate: initial;\n      --tw-sepia: initial;\n      --tw-drop-shadow: initial;\n      --tw-drop-shadow-color: initial;\n      --tw-drop-shadow-alpha: 100%;\n      --tw-drop-shadow-size: initial;\n    }\n  }\n}\n';
 
 // web/thread-model.js
 var CATEGORIES = [
@@ -193,7 +193,7 @@ function detailText(t) {
 // web/plugin.jsx
 var React = platform.React;
 var api = platform.api;
-var { h, modal, toast, downloadFile } = platform.ui;
+var { h, modal, toast, downloadFile, fmtDate } = platform.ui;
 var EXT = "/extensions/threadviewer";
 var POLL_MS = 5e3;
 var STYLE_ID = "thread-viewer-style";
@@ -380,12 +380,7 @@ function showDetail(initialThread) {
   let capturedAt = store.snapshot?.timestamp;
   let previousSnapshot, previousMonitoring, previousError;
   const body = h("div", { class: "flex flex-col gap-2 min-w-0" });
-  const infoRow = (label, value) => h(
-    "div",
-    { class: "flex gap-2 text-[12px]" },
-    h("span", { class: "text-text-faint min-w-[100px] flex-none" }, label),
-    h("span", { class: "mono [word-break:break-all]" }, value)
-  );
+  const infoRow = (label, value) => [h("dt", label), h("dd", value)];
   const render = () => {
     if (previousSnapshot === store.snapshot && previousMonitoring === store.monitoring && previousError === store.error) return;
     previousSnapshot = store.snapshot;
@@ -399,12 +394,12 @@ function showDetail(initialThread) {
     }
     const t = thread;
     const color = stateColor(t.state);
+    const status = h(
+      "div",
+      { class: "text-text-faint", role: "status" },
+      `${store.error && store.monitoring ? "Snapshot unavailable; retained sample: " + store.error : present ? store.monitoring ? "Following this thread" : "Monitoring stopped; retained sample" : "Thread no longer present; showing its last captured sample"}. ` + (capturedAt ? `Captured ${fmtDate(capturedAt)}.` : "")
+    );
     const info = [
-      h(
-        "div",
-        { class: "text-[12px] text-text-faint", role: "status" },
-        `${store.error && store.monitoring ? "Snapshot unavailable; retained sample: " + store.error : present ? store.monitoring ? "Following this thread" : "Monitoring stopped; retained sample" : "Thread no longer present; showing its last captured sample"}. ` + (capturedAt ? `Captured ${new Date(capturedAt).toLocaleString()}.` : "")
-      ),
       infoRow("Name", t.name),
       infoRow("State", h(
         "span",
@@ -413,11 +408,6 @@ function showDetail(initialThread) {
       )),
       infoRow("Daemon", `${t.daemon}  |  Priority: ${t.priority}  |  Group: ${t.threadGroup ?? ""}`),
       infoRow("Lifetime CPU", `${formatTimeNanos(t.cpuTimeNanos)}  |  Lifetime user time: ${formatTimeNanos(t.userTimeNanos)}`),
-      h(
-        "div",
-        { class: "text-[12px] text-text-faint" },
-        "CPU/user totals belong to this thread, including work for previous channels."
-      ),
       infoRow("Contention", `Blocked: ${t.blockedCount} (${formatTimeMs(t.blockedTimeMs)})  |  Waited: ${t.waitedCount} (${formatTimeMs(t.waitedTimeMs)})`)
     ];
     for (const line of attributionLines(t)) {
@@ -429,7 +419,13 @@ function showDetail(initialThread) {
       if (t.lockOwnerId >= 0) info.push(infoRow("Lock owner", `${t.lockOwnerName} (id=${t.lockOwnerId})`));
     }
     body.replaceChildren(
-      ...info,
+      status,
+      h("dl.kv", { class: "m-0" }, ...info),
+      h(
+        "div",
+        { class: "text-text-faint" },
+        "CPU/user totals belong to this thread, including work for previous channels."
+      ),
       h("div", { class: "font-semibold mt-1" }, `Stack Trace (${t.stackTrace.length} frames)`),
       h(
         "pre",
@@ -549,7 +545,8 @@ function ThreadRow({ t }) {
     /* @__PURE__ */ React.createElement("td", { className: "max-w-0 mono text-[12px]" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 min-w-0" }, /* @__PURE__ */ React.createElement("span", { className: "truncate flex-1 min-w-0", title: t.name }, t.name), /* @__PURE__ */ React.createElement(
       "button",
       {
-        className: "btn flex-none text-[12px]",
+        type: "button",
+        className: "btn btn-sm thread-viewer-details",
         "aria-label": `Details for thread ${t.name}`,
         onClick: (e) => {
           e.stopPropagation();
@@ -560,10 +557,10 @@ function ThreadRow({ t }) {
       "Details"
     ))),
     /* @__PURE__ */ React.createElement("td", { className: "whitespace-nowrap font-[650] text-[12px]", style: color ? { color } : null }, t.state, t.deadlocked ? " \u26A0" : ""),
-    /* @__PURE__ */ React.createElement("td", { className: "text-right mono text-[12px]" }, t.cpuMs >= 0 ? t.cpuMs : "\u2014"),
+    /* @__PURE__ */ React.createElement("td", { className: "num" }, t.cpuMs >= 0 ? t.cpuMs : "\u2014"),
     /* @__PURE__ */ React.createElement("td", { className: "whitespace-nowrap text-[12px]" }, t.category),
-    /* @__PURE__ */ React.createElement("td", { className: "text-right mono text-[12px]" }, t.blockedCount),
-    /* @__PURE__ */ React.createElement("td", { className: "text-right mono text-[12px]" }, t.waitedCount),
+    /* @__PURE__ */ React.createElement("td", { className: "num" }, t.blockedCount),
+    /* @__PURE__ */ React.createElement("td", { className: "num" }, t.waitedCount),
     /* @__PURE__ */ React.createElement("td", { className: "truncate text-[12px]", title: `${t.channelName || ""} [${t.channelId || "unassigned"}]${t.savedChannelName && t.savedChannelName !== t.channelName ? `; saved name: ${t.savedChannelName}` : ""}` }, t.channelName || t.channelId || ""),
     /* @__PURE__ */ React.createElement("td", { className: "truncate text-[12px]", title: `${associationLabel(t.associationKind)}; ${t.resolutionStatus}${t.matchReason ? ": " + t.matchReason : ""}` }, associationLabel(t.associationKind)),
     /* @__PURE__ */ React.createElement("td", { className: "truncate text-[12px]", title: t.role || "" }, t.role || ""),
@@ -618,11 +615,11 @@ function ThreadViewerTab() {
   } else if (!rows.length) {
     emptyText = "No threads match the current filters.";
   }
-  const selectClass = "h-[24px] py-0 px-1 text-[12px]";
-  return /* @__PURE__ */ React.createElement("div", { className: "flex flex-col h-full min-h-0" }, /* @__PURE__ */ React.createElement("div", { className: "taskbar flex items-center gap-1.5 flex-wrap py-[3px] px-2 flex-none text-[12px] z-[2] bg-bg1 border-b border-[var(--bg3)]" }, /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "thread-viewer-panel flex flex-col h-full min-h-0" }, /* @__PURE__ */ React.createElement("div", { className: "taskbar thread-viewer-toolbar" }, /* @__PURE__ */ React.createElement(
     "button",
     {
-      className: "btn text-[12px] " + (monitoring ? "" : "btn-primary"),
+      type: "button",
+      className: "btn btn-sm " + (monitoring ? "" : "btn-primary"),
       disabled: starting,
       onClick: monitoring ? stopMonitoring : startMonitoring
     },
@@ -630,7 +627,8 @@ function ThreadViewerTab() {
   ), /* @__PURE__ */ React.createElement(
     "button",
     {
-      className: "btn text-[12px]",
+      type: "button",
+      className: "btn btn-sm",
       disabled: !monitoring,
       title: "Fetch a snapshot now",
       onClick: fetchSnapshot
@@ -639,7 +637,8 @@ function ThreadViewerTab() {
   ), /* @__PURE__ */ React.createElement(
     "button",
     {
-      className: "btn text-[12px]",
+      type: "button",
+      className: "btn btn-sm",
       disabled: !snapshot || !snapshot.threads.length,
       title: "Export a jstack-compatible thread dump",
       onClick: exportThreadDump
@@ -651,14 +650,13 @@ function ThreadViewerTab() {
       type: "text",
       placeholder: "Search threads / stacks\u2026",
       "aria-label": "Search thread, channel, connector, role or stack trace",
-      className: "w-[170px] h-[24px] py-0 px-1 text-[12px]",
+      className: "thread-viewer-search",
       value: filters.search,
       onChange: (e) => setFilter("search", e.target.value)
     }
   ), /* @__PURE__ */ React.createElement(
     "select",
     {
-      className: selectClass,
       value: filters.channel,
       title: "Filter by stable channel ID",
       "aria-label": "Filter by channel",
@@ -669,7 +667,6 @@ function ThreadViewerTab() {
   ), /* @__PURE__ */ React.createElement(
     "select",
     {
-      className: selectClass,
       value: filters.category,
       title: "Filter by thread category",
       "aria-label": "Filter by thread category",
@@ -680,7 +677,6 @@ function ThreadViewerTab() {
   ), /* @__PURE__ */ React.createElement(
     "select",
     {
-      className: selectClass,
       value: filters.state,
       title: "Filter by thread state",
       "aria-label": "Filter by thread state",
@@ -691,7 +687,6 @@ function ThreadViewerTab() {
   ), /* @__PURE__ */ React.createElement(
     "select",
     {
-      className: selectClass,
       value: filters.association,
       title: "Current execution, persistent channel ownership, or channel management",
       "aria-label": "Filter by channel association",
@@ -699,7 +694,7 @@ function ThreadViewerTab() {
     },
     /* @__PURE__ */ React.createElement("option", { value: "" }, "All Associations"),
     associations.map((kind) => /* @__PURE__ */ React.createElement("option", { key: kind, value: kind }, associationLabel(kind)))
-  ), /* @__PURE__ */ React.createElement("button", { className: "btn text-[12px]", onClick: clearFilters }, "Clear Filters"), /* @__PURE__ */ React.createElement("span", { className: "flex-1" }), snapshot && snapshot.deadlockDetected && /* @__PURE__ */ React.createElement("span", { className: "text-err font-bold" }, "DEADLOCK DETECTED"), /* @__PURE__ */ React.createElement("span", { className: error && monitoring ? "text-err" : "text-text-faint" }, status)), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-h-0 overflow-auto" }, /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("button", { type: "button", className: "btn btn-sm", onClick: clearFilters }, "Clear Filters"), /* @__PURE__ */ React.createElement("span", { className: "flex-1" }), snapshot && snapshot.deadlockDetected && /* @__PURE__ */ React.createElement("span", { className: "text-err font-bold" }, "DEADLOCK DETECTED"), /* @__PURE__ */ React.createElement("span", { role: "status", className: "thread-viewer-status " + (error && monitoring ? "text-err" : "text-text-faint") }, status)), /* @__PURE__ */ React.createElement("div", { className: "flex-1 min-h-0 overflow-auto" }, /* @__PURE__ */ React.createElement(
     "table",
     {
       className: "dt dt-resizable thread-viewer w-full table-fixed",
@@ -716,19 +711,20 @@ function ThreadViewerTab() {
       "th",
       {
         key: col.key,
-        className: "sticky top-0 z-[1] bg-bg1 cursor-pointer select-none whitespace-nowrap" + (col.num ? " text-right" : ""),
+        className: "sortable",
         title: col.title || "Sort by " + col.label,
         "aria-sort": sort.key === col.key ? sort.dir === "desc" ? "descending" : "ascending" : "none"
       },
       /* @__PURE__ */ React.createElement(
         "button",
         {
-          className: "w-full text-left cursor-pointer",
+          type: "button",
+          className: "thread-viewer-sort",
           onClick: () => setSort(col.key),
           "aria-label": "Sort by " + col.label
         },
         col.label,
-        sort.key === col.key ? sort.dir === "desc" ? " \u25BE" : " \u25B4" : ""
+        sort.key === col.key ? /* @__PURE__ */ React.createElement("span", { className: "sort-arrow", "aria-hidden": "true" }, sort.dir === "desc" ? "\u25BC" : "\u25B2") : null
       ),
       i < COLUMNS.length - 1 ? /* @__PURE__ */ React.createElement(
         "div",

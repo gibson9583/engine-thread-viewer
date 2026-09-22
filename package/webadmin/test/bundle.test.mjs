@@ -17,7 +17,14 @@ function fixture(widths = null) {
     const platform = {
         React: { useReducer: () => [0, () => {}], useEffect: () => {}, createElement: node },
         api: { asList },
-        ui: { h: node, toast: (...args) => toasts.push(args), modal: options => {
+        ui: { h: (type, attrs, ...children) => {
+            // The host DOM helper accepts h(tag, text/node/children) as well as
+            // h(tag, attributes, ...children); JSX createElement does not.
+            if (attrs && (typeof attrs !== 'object' || Array.isArray(attrs) || Array.isArray(attrs.children))) {
+                return node(type, null, attrs, ...children);
+            }
+            return node(type, attrs, ...children);
+        }, fmtDate: millis => `Host timestamp ${millis}`, toast: (...args) => toasts.push(args), modal: options => {
             dialogs.push(options);
             return { close: () => options.onClose?.() };
         } }
@@ -101,16 +108,19 @@ test('detail dialog follows reassignment by thread ID, copies the displayed samp
     f.showDetail(f.store.snapshot.threads[0]);
     const dialog = f.dialogs[0];
     assert.match(textContent(dialog.body), /Original/);
+    assert.match(textContent(dialog.body), /Captured Host timestamp 1234/);
     assert.equal(f.store.listeners.size, 1);
-    f.store.snapshot = f.normalizeSnapshot(raw('New assignment', 'channel-2'));
+    f.store.snapshot = f.normalizeSnapshot({ ...raw('New assignment', 'channel-2'), timestamp: 2234 });
     f.emit();
     assert.match(textContent(dialog.body), /New assignment/);
     assert.doesNotMatch(textContent(dialog.body), /Original/);
+    assert.match(textContent(dialog.body), /Captured Host timestamp 2234/);
     await dialog.buttons[0].onClick();
     assert.match(copied, /Channel: New assignment \[channel-2\]/);
-    f.store.snapshot = f.normalizeSnapshot({ timestamp: 2234, threads: [] });
+    f.store.snapshot = f.normalizeSnapshot({ timestamp: 3234, threads: [] });
     f.emit();
     assert.match(textContent(dialog.body), /Thread no longer present/);
+    assert.match(textContent(dialog.body), /Captured Host timestamp 2234/);
     await dialog.buttons[0].onClick();
     assert.match(copied, /Thread no longer present; last captured sample/);
     assert.match(copied, /Channel: New assignment \[channel-2\]/);
