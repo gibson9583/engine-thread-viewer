@@ -35,6 +35,7 @@
              (plugin.xml <mirthVersion> — the extension loader only loads a
              plugin whose list contains the running engine version). -->
         <plugin.supported.oie.versions>${mirth.version}</plugin.supported.oie.versions>
+        <junit.version>5.10.2</junit.version>
     </properties>
 
     <repositories>
@@ -46,6 +47,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
             <!-- OIE -->
             <dependency>
                 <groupId>com.mirth.connect</groupId>
@@ -84,6 +91,11 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>

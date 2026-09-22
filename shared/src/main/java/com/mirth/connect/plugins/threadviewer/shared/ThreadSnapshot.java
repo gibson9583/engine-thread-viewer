@@ -21,6 +21,7 @@ public class ThreadSnapshot implements Serializable {
     private Map<String, Integer> stateCounts;
     private Map<String, Integer> categoryCounts;
     private List<String> deployedChannelNames;
+    private List<ChannelInfo> channels;
 
     public ThreadSnapshot() {}
 
@@ -44,4 +45,6 @@ public class ThreadSnapshot implements Serializable {
     public void setCategoryCounts(Map<String, Integer> categoryCounts) { this.categoryCounts = categoryCounts; }
     public List<String> getDeployedChannelNames() { return deployedChannelNames; }
     public void setDeployedChannelNames(List<String> deployedChannelNames) { this.deployedChannelNames = deployedChannelNames; }
+    public List<ChannelInfo> getChannels() { return channels; }
+    public void setChannels(List<ChannelInfo> channels) { this.channels = channels; }
 }
