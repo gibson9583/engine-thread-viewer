@@ -12,4 +12,3 @@ export function asList(value, key) {
     }
     return value == null || value === '' ? [] : Array.isArray(value) ? value : [value];
 }
-
