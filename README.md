@@ -44,7 +44,7 @@ mvn clean package
 (CI installs the same jars from the published OIE distribution tarball instead —
 see `.github/workflows/build.yml`.)
 
-The plugin ZIP will be in `package/target/thread-viewer-1.0.6.zip` (or the overridden revision).
+The plugin ZIP will be in `package/target/thread-viewer-1.0.7.zip` (or the overridden revision).
 The Maven build runs Java regression tests and the web tests, and installs the locked frontend
 dependencies with `npm ci`. Compile against published Java 17 engine artifacts when validating
 Java 17 support; locally rebuilt engine JARs may target a newer Java version.

@@ -1,7 +1,7 @@
 # Publishes the plugin to GitHub Releases in the shape the OIE Community Store
 # expects (extension zip + .sha256 sidecar), on a semver tag:
 #
-#   git tag v1.0.6 && git push origin v1.0.6
+#   git tag v1.0.7 && git push origin v1.0.7
 #
 # The tag drives the Maven version via -Drevision, so plugin.xml's pluginVersion
 # (what the engine reports as "installed") matches oie.json, keeping the store's
