@@ -30,6 +30,12 @@ public class ThreadInfo implements Serializable {
     private String channelName;
     private String channelId;
     private String connectorName;
+    private Integer connectorMetadataId;
+    private String role;
+    private String associationKind;
+    private String resolutionStatus;
+    private String matchReason;
+    private String savedChannelName;
     private boolean deadlocked;
     private String jstackDump;
 
@@ -75,6 +81,18 @@ public class ThreadInfo implements Serializable {
     public void setChannelId(String channelId) { this.channelId = channelId; }
     public String getConnectorName() { return connectorName; }
     public void setConnectorName(String connectorName) { this.connectorName = connectorName; }
+    public Integer getConnectorMetadataId() { return connectorMetadataId; }
+    public void setConnectorMetadataId(Integer connectorMetadataId) { this.connectorMetadataId = connectorMetadataId; }
+    public String getRole() { return role; }
+    public void setRole(String role) { this.role = role; }
+    public String getAssociationKind() { return associationKind; }
+    public void setAssociationKind(String associationKind) { this.associationKind = associationKind; }
+    public String getResolutionStatus() { return resolutionStatus; }
+    public void setResolutionStatus(String resolutionStatus) { this.resolutionStatus = resolutionStatus; }
+    public String getMatchReason() { return matchReason; }
+    public void setMatchReason(String matchReason) { this.matchReason = matchReason; }
+    public String getSavedChannelName() { return savedChannelName; }
+    public void setSavedChannelName(String savedChannelName) { this.savedChannelName = savedChannelName; }
     public boolean isDeadlocked() { return deadlocked; }
     public void setDeadlocked(boolean deadlocked) { this.deadlocked = deadlocked; }
     public String getJstackDump() { return jstackDump; }

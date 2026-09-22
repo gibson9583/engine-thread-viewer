@@ -4,20 +4,23 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.BorderFactory;
@@ -32,6 +35,7 @@ import javax.swing.JSplitPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JViewport;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowFilter;
 import javax.swing.SortOrder;
@@ -48,6 +52,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.mirth.connect.client.ui.UIConstants;
+import com.mirth.connect.plugins.threadviewer.client.ThreadPresentation.ChannelOption;
 import com.mirth.connect.plugins.threadviewer.shared.ThreadInfo;
 import com.mirth.connect.plugins.threadviewer.shared.ThreadSnapshot;
 
@@ -55,14 +60,20 @@ import net.miginfocom.swing.MigLayout;
 
 public class ThreadViewerPanel extends JPanel {
 
+    interface SnapshotApi {
+        void activate() throws Exception;
+        void deactivate();
+        ThreadSnapshot fetchSnapshot() throws Exception;
+    }
+
     private static final Logger logger = LogManager.getLogger(ThreadViewerPanel.class);
 
     private static final int POLL_INTERVAL_SECONDS = 5;
     private static final Color BORDER_COLOR = new Color(180, 180, 180);
 
     private static final String[] COLUMN_NAMES = {
-        "Thread Name", "State", "CPU (ms)", "Category",
-        "Blocked", "Waited", "Channel", "Connector"
+        "Thread Name", "State", "Lifetime CPU (ms)", "Category",
+        "Blocked", "Waited", "Channel", "Connector", "Role", "Association"
     };
 
     // Controls
@@ -72,9 +83,10 @@ public class ThreadViewerPanel extends JPanel {
     private final JLabel statusLabel;
     private final JLabel deadlockLabel;
     private final JTextField searchField;
-    private final JComboBox<String> channelCombo;
+    private final JComboBox<ChannelOption> channelCombo;
     private final JComboBox<String> categoryCombo;
     private final JComboBox<String> stateCombo;
+    private final JComboBox<String> associationCombo;
 
     // Thread data
     private final ThreadTableModel tableModel;
@@ -87,12 +99,28 @@ public class ThreadViewerPanel extends JPanel {
 
     // State
     private final AtomicBoolean monitoring = new AtomicBoolean(false);
+    private final AtomicLong refreshPendingGeneration = new AtomicLong(-1);
+    private final AtomicLong generation = new AtomicLong();
+    private final Object controlLock = new Object();
+    private long activatedGeneration = -1;
     private volatile boolean updatingChannels = false;
+    private boolean updatingThreads;
+    private long detailRevision;
     private final AtomicReference<ScheduledExecutorService> schedulerRef = new AtomicReference<>();
     private volatile ScheduledFuture<?> pollFuture;
+    private final SnapshotApi api;
 
     public ThreadViewerPanel() {
+        this(new SnapshotApi() {
+            @Override public void activate() throws Exception { ThreadViewerApiClient.activate(); }
+            @Override public void deactivate() { ThreadViewerApiClient.deactivate(); }
+            @Override public ThreadSnapshot fetchSnapshot() throws Exception { return ThreadViewerApiClient.fetchSnapshot(); }
+        });
+    }
+
+    ThreadViewerPanel(SnapshotApi api) {
         super(new MigLayout("insets 4, fill, wrap 1", "[grow,fill]", "[][grow,fill]"));
+        this.api = api;
         setBackground(UIConstants.BACKGROUND_COLOR);
 
         // ── Controls section ─────────────────────────────────
@@ -137,11 +165,11 @@ public class ThreadViewerPanel extends JPanel {
             @Override public void changedUpdate(DocumentEvent e) { applyFilters(); }
         });
 
-        channelCombo = new JComboBox<>(new String[]{"All Channels"});
+        channelCombo = new JComboBox<>(new ChannelOption[]{ThreadPresentation.ALL_CHANNELS});
         channelCombo.addActionListener(e -> applyFilters());
 
         categoryCombo = new JComboBox<>(new String[]{
-            "All Categories", "Channel Processing", "Database Pool",
+            "All Categories", "Channel Processing", "Channel Management", "Database Pool", "Executor",
             "HTTP / Servlet", "Event System", "Plugin", "Scheduler",
             "JMX / Management", "System / JVM", "Other"});
         categoryCombo.addActionListener(e -> applyFilters());
@@ -151,18 +179,27 @@ public class ThreadViewerPanel extends JPanel {
             "BLOCKED", "NEW", "TERMINATED"});
         stateCombo.addActionListener(e -> applyFilters());
 
+        associationCombo = new JComboBox<>(new String[]{
+            "All Associations", "Current execution", "Channel ownership", "Channel management", "Unassigned"});
+        associationCombo.setToolTipText("Current task context, persistent channel ownership, or a management operation.");
+        associationCombo.addActionListener(e -> applyFilters());
+
         JButton clearBtn = new JButton("Clear Filters");
         clearBtn.addActionListener(e -> clearFilters());
 
         controlPanel.add(new JLabel("Search:"));
         controlPanel.add(searchField, "width 200!");
         controlPanel.add(new JLabel("Channel:"));
-        controlPanel.add(channelCombo, "width 200!");
+        controlPanel.add(channelCombo, "width 300!");
         controlPanel.add(new JLabel("Category:"));
         controlPanel.add(categoryCombo, "width 200!");
         controlPanel.add(new JLabel("State:"));
         controlPanel.add(stateCombo, "width 200!");
+        controlPanel.add(new JLabel("Association:"));
+        controlPanel.add(associationCombo, "width 200!");
         controlPanel.add(clearBtn, "span 2, left");
+        JLabel cpuNote = new JLabel(ThreadPresentation.CPU_NOTE);
+        controlPanel.add(cpuNote, "span 2, left");
 
         add(controlPanel);
 
@@ -173,8 +210,14 @@ public class ThreadViewerPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setGridColor(UIConstants.GRID_COLOR);
         table.getColumnModel().getColumn(1).setCellRenderer(new StateCellRenderer());
+        table.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() {
+            @Override protected void setValue(Object value) {
+                setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+                super.setValue(value != null ? value : "Unavailable");
+            }
+        });
 
-        int[] widths = {280, 100, 80, 120, 60, 60, 150, 130};
+        int[] widths = {280, 100, 125, 120, 60, 60, 150, 130, 150, 130};
         for (int i = 0; i < widths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
@@ -212,12 +255,18 @@ public class ThreadViewerPanel extends JPanel {
     }
 
     public void activateMonitoring() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::activateMonitoring);
+            return;
+        }
         if (!monitoring.compareAndSet(false, true)) {
             return;
         }
+        long currentGeneration = generation.incrementAndGet();
+        refreshPendingGeneration.set(-1);
 
         toggleBtn.setText("Stop Monitoring");
-        refreshBtn.setEnabled(true);
+        refreshBtn.setEnabled(false);
         statusLabel.setText("Starting...");
 
         ScheduledExecutorService newScheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -229,14 +278,26 @@ public class ThreadViewerPanel extends JPanel {
 
         newScheduler.execute(() -> {
             try {
-                ThreadViewerApiClient.activate();
-                SwingUtilities.invokeLater(this::startPolling);
-            } catch (Throwable e) {
+                synchronized (controlLock) {
+                    if (!isCurrent(currentGeneration)) return;
+                    api.activate();
+                    activatedGeneration = currentGeneration;
+                    if (!isCurrent(currentGeneration)) {
+                        deactivateServer(currentGeneration);
+                        return;
+                    }
+                }
+                SwingUtilities.invokeLater(() -> {
+                    if (isCurrent(currentGeneration)) startPolling(currentGeneration, newScheduler);
+                });
+            } catch (Exception e) {
                 logger.error("Failed to activate thread monitoring", e);
-                monitoring.set(false);
-                shutdownScheduler(schedulerRef.getAndSet(null));
                 final String msg = e.getClass().getName() + ": " + e.getMessage();
                 SwingUtilities.invokeLater(() -> {
+                    if (!isCurrent(currentGeneration)) return;
+                    monitoring.set(false);
+                    schedulerRef.compareAndSet(newScheduler, null);
+                    newScheduler.shutdown();
                     toggleBtn.setText("Start Monitoring");
                     refreshBtn.setEnabled(false);
                     statusLabel.setText("Monitoring stopped.");
@@ -249,9 +310,14 @@ public class ThreadViewerPanel extends JPanel {
     }
 
     public void deactivateMonitoring() {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            SwingUtilities.invokeLater(this::deactivateMonitoring);
+            return;
+        }
         if (!monitoring.compareAndSet(true, false)) {
             return;
         }
+        long stoppedGeneration = generation.getAndIncrement();
         stopPolling();
 
         toggleBtn.setText("Start Monitoring");
@@ -265,14 +331,26 @@ public class ThreadViewerPanel extends JPanel {
 
         ScheduledExecutorService sched = schedulerRef.getAndSet(null);
         if (sched != null && !sched.isShutdown()) {
-            // Fire deactivate on the server, then shut down the executor
+            // Cleanup runs outside the executor so a canceled queued task cannot lose deactivation.
             Thread cleanup = new Thread(() -> {
-                try { sched.execute(ThreadViewerApiClient::deactivate); }
-                catch (Exception ignored) { /* executor may already be shut down */ }
                 shutdownScheduler(sched);
+                deactivateServer(stoppedGeneration);
             }, "plugin-ThreadViewer-cleanup");
             cleanup.setDaemon(true);
             cleanup.start();
+        }
+    }
+
+    private boolean isCurrent(long expectedGeneration) {
+        return monitoring.get() && generation.get() == expectedGeneration;
+    }
+
+    private void deactivateServer(long expectedGeneration) {
+        synchronized (controlLock) {
+            if (activatedGeneration == expectedGeneration) {
+                api.deactivate();
+                activatedGeneration = -1;
+            }
         }
     }
 
@@ -289,11 +367,11 @@ public class ThreadViewerPanel extends JPanel {
 
     // ── Polling ──────────────────────────────────────────────
 
-    private void startPolling() {
-        ScheduledExecutorService sched = schedulerRef.get();
-        if (sched != null && !sched.isShutdown()) {
+    private void startPolling(long currentGeneration, ScheduledExecutorService sched) {
+        if (isCurrent(currentGeneration) && !sched.isShutdown()) {
+            refreshBtn.setEnabled(true);
             pollFuture = sched.scheduleWithFixedDelay(
-                    this::fetchSnapshot, 0, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
+                    () -> fetchSnapshot(currentGeneration), 0, POLL_INTERVAL_SECONDS, TimeUnit.SECONDS);
         }
     }
 
@@ -304,54 +382,70 @@ public class ThreadViewerPanel extends JPanel {
 
     public void reset() {
         SwingUtilities.invokeLater(() -> {
+            deactivateMonitoring();
+            generation.incrementAndGet();
+            lastSnapshot.set(null);
             tableModel.setThreads(new ArrayList<>());
+            channelCombo.setSelectedIndex(0);
+            updateChannelFilter(new ThreadSnapshot());
+            clearFilters();
+            deadlockLabel.setText("");
+            statusLabel.setText("Monitoring stopped.");
+            exportBtn.setEnabled(false);
             stackArea.setText("Select a thread to view its stack trace.");
         });
     }
 
-    private void fetchSnapshot() {
-        if (!monitoring.get()) return;
+    private void fetchSnapshot(long currentGeneration) {
+        if (!isCurrent(currentGeneration)) return;
         try {
-            ThreadSnapshot snapshot = ThreadViewerApiClient.fetchSnapshot();
-            SwingUtilities.invokeLater(() -> updateUI(snapshot));
+            ThreadSnapshot snapshot = api.fetchSnapshot();
+            if (snapshot == null) throw new IOException("The server returned an empty thread snapshot.");
+            SwingUtilities.invokeLater(() -> {
+                if (isCurrent(currentGeneration)) updateUI(snapshot);
+            });
         } catch (Exception e) {
             logger.warn("Error fetching thread snapshot: {}", e.getMessage());
-            SwingUtilities.invokeLater(() -> statusLabel.setText("Error: " + e.getMessage()));
+            SwingUtilities.invokeLater(() -> {
+                if (isCurrent(currentGeneration)) statusLabel.setText("Error: " + e.getMessage());
+            });
         }
     }
 
     // ── UI updates ───────────────────────────────────────────
 
     private void updateUI(ThreadSnapshot snapshot) {
+        Long selectedId = selectedThreadId();
         lastSnapshot.set(snapshot);
-        if (snapshot.getThreads() != null) tableModel.setThreads(snapshot.getThreads());
+        updatingThreads = true;
+        try {
+            tableModel.setThreads(snapshot.getThreads());
+            updateChannelFilter(snapshot);
+            applyFilters();
+            restoreThreadSelection(selectedId);
+        } finally {
+            updatingThreads = false;
+        }
 
         statusLabel.setText(String.format("Threads: %d  |  Daemon: %d  |  Peak: %d",
                 snapshot.getTotalThreadCount(), snapshot.getDaemonThreadCount(),
                 snapshot.getPeakThreadCount()));
         deadlockLabel.setText(snapshot.isDeadlockDetected() ? "DEADLOCK DETECTED" : "");
         exportBtn.setEnabled(true);
-        updateChannelFilter(snapshot.getDeployedChannelNames());
-        applyFilters();
     }
 
-    private void updateChannelFilter(List<String> channelNames) {
+    private void updateChannelFilter(ThreadSnapshot snapshot) {
         updatingChannels = true;
         try {
-            String selected = (String) channelCombo.getSelectedItem();
+            ChannelOption selected = (ChannelOption) channelCombo.getSelectedItem();
             channelCombo.removeAllItems();
-            channelCombo.addItem("All Channels");
-            if (channelNames != null) {
-                for (String name : channelNames) channelCombo.addItem(name);
-            }
-            if (selected != null) {
-                for (int i = 0; i < channelCombo.getItemCount(); i++) {
-                    if (selected.equals(channelCombo.getItemAt(i))) {
-                        channelCombo.setSelectedIndex(i);
-                        break;
-                    }
+            for (ChannelOption option : ThreadPresentation.channelOptions(snapshot, selected)) {
+                channelCombo.addItem(option);
+                if (selected != null && Objects.equals(selected.id, option.id)) {
+                    channelCombo.setSelectedItem(option);
                 }
             }
+            channelCombo.setToolTipText(String.valueOf(channelCombo.getSelectedItem()));
         } finally { updatingChannels = false; }
     }
 
@@ -361,26 +455,35 @@ public class ThreadViewerPanel extends JPanel {
         if (updatingChannels) return;
         List<RowFilter<ThreadTableModel, Integer>> filters = new ArrayList<>();
 
-        String query = searchField.getText().trim().toLowerCase();
+        String query = searchField.getText().trim().toLowerCase(Locale.ROOT);
         if (!query.isEmpty()) {
             filters.add(new RowFilter<>() {
                 @Override public boolean include(Entry<? extends ThreadTableModel, ? extends Integer> entry) {
                     ThreadInfo ti = tableModel.getThreadAt(entry.getIdentifier());
                     if (ti == null) return false;
-                    String s = ti.getName()
-                            + " " + (ti.getChannelName() != null ? ti.getChannelName() : "")
-                            + " " + (ti.getChannelId() != null ? ti.getChannelId() : "");
-                    return s.toLowerCase().contains(query);
+                    return ThreadPresentation.matchesSearch(ti, query);
                 }
             });
         }
 
-        String ch = (String) channelCombo.getSelectedItem();
-        if (ch != null && !"All Channels".equals(ch)) {
+        ChannelOption ch = (ChannelOption) channelCombo.getSelectedItem();
+        channelCombo.setToolTipText(ch != null ? ch.toString() : null);
+        if (ch != null && ch.id != null) {
             filters.add(new RowFilter<>() {
                 @Override public boolean include(Entry<? extends ThreadTableModel, ? extends Integer> e) {
                     ThreadInfo ti = tableModel.getThreadAt(e.getIdentifier());
-                    return ti != null && ch.equals(ti.getChannelName());
+                    return ti != null && ch.id.equals(ti.getChannelId());
+                }
+            });
+        }
+
+        String association = (String) associationCombo.getSelectedItem();
+        String associationKind = ThreadPresentation.associationKind(association);
+        if (associationKind != null) {
+            filters.add(new RowFilter<>() {
+                @Override public boolean include(Entry<? extends ThreadTableModel, ? extends Integer> e) {
+                    ThreadInfo ti = tableModel.getThreadAt(e.getIdentifier());
+                    return ti != null && associationKind.equals(ti.getAssociationKind());
                 }
             });
         }
@@ -415,6 +518,7 @@ public class ThreadViewerPanel extends JPanel {
             channelCombo.setSelectedIndex(0);
             categoryCombo.setSelectedIndex(0);
             stateCombo.setSelectedIndex(0);
+            associationCombo.setSelectedIndex(0);
         } finally { updatingChannels = false; }
         applyFilters();
     }
@@ -422,7 +526,7 @@ public class ThreadViewerPanel extends JPanel {
     // ── Thread detail ────────────────────────────────────────
 
     private void onThreadSelected(ListSelectionEvent e) {
-        if (e.getValueIsAdjusting()) return;
+        if (updatingThreads || e.getValueIsAdjusting()) return;
         int viewRow = table.getSelectedRow();
         if (viewRow < 0) { stackArea.setText("Select a thread to view its stack trace."); return; }
 
@@ -430,40 +534,92 @@ public class ThreadViewerPanel extends JPanel {
         ThreadInfo ti = tableModel.getThreadAt(modelRow);
         if (ti == null) return;
 
-        StringBuilder sb = new StringBuilder(512);
-        sb.append(String.format("Thread: %s (id=%d)%n", ti.getName(), ti.getThreadId()));
-        sb.append(String.format("State: %s  |  Daemon: %s  |  Priority: %d  |  Group: %s%n",
-                ti.getState(), ti.isDaemon(), ti.getPriority(), ti.getThreadGroup()));
-        sb.append(String.format("CPU: %.1f ms  |  User: %.1f ms%n",
-                ti.getCpuTimeNanos() / 1_000_000.0, ti.getUserTimeNanos() / 1_000_000.0));
-        sb.append(String.format("Blocked: %d (%.1f ms)  |  Waited: %d (%.1f ms)%n",
-                ti.getBlockedCount(), Math.max(0.0, ti.getBlockedTimeMs()),
-                ti.getWaitedCount(), Math.max(0.0, ti.getWaitedTimeMs())));
+        updateThreadDetail(ti, false);
+    }
 
-        if (ti.getLockName() != null) {
-            sb.append(String.format("Waiting on: %s%n", ti.getLockName()));
-            if (ti.getLockOwnerId() >= 0)
-                sb.append(String.format("Lock owner: %s (id=%d)%n", ti.getLockOwnerName(), ti.getLockOwnerId()));
+    private void updateThreadDetail(ThreadInfo thread, boolean preservePosition) {
+        String detail = ThreadPresentation.detail(thread);
+        if (detail.equals(stackArea.getText())) return;
+        long revision = ++detailRevision;
+
+        int caret = stackArea.getCaret().getDot();
+        int anchor = stackArea.getCaret().getMark();
+        JViewport viewport = stackArea.getParent() instanceof JViewport ? (JViewport) stackArea.getParent() : null;
+        Point position = viewport != null ? viewport.getViewPosition() : null;
+        stackArea.setText(detail);
+        if (preservePosition) {
+            int length = stackArea.getDocument().getLength();
+            stackArea.setCaretPosition(Math.min(anchor, length));
+            stackArea.moveCaretPosition(Math.min(caret, length));
+            if (viewport != null) {
+                restoreViewport(viewport, position);
+                // DefaultCaret queues scroll-to-caret work. Restore after it,
+                // unless another selection, snapshot or user caret move superseded this sample.
+                SwingUtilities.invokeLater(() -> {
+                    if (detailRevision == revision && Objects.equals(selectedThreadId(), thread.getThreadId())
+                            && stackArea.getCaret().getDot() == Math.min(caret, length)
+                            && stackArea.getCaret().getMark() == Math.min(anchor, length)) {
+                        restoreViewport(viewport, position);
+                    }
+                });
+            }
+        } else {
+            stackArea.setCaretPosition(0);
         }
-        if (ti.isDeadlocked()) sb.append("*** DEADLOCKED ***\n");
-        if (ti.getChannelName() != null) {
-            sb.append(String.format("Channel: %s [%s]%n", ti.getChannelName(), ti.getChannelId()));
-            if (ti.getConnectorName() != null)
-                sb.append(String.format("Connector: %s%n", ti.getConnectorName()));
+    }
+
+    private void restoreViewport(JViewport viewport, Point position) {
+        viewport.doLayout();
+        Dimension size = viewport.getViewSize();
+        Dimension extent = viewport.getExtentSize();
+        viewport.setViewPosition(new Point(
+                Math.min(position.x, Math.max(0, size.width - extent.width)),
+                Math.min(position.y, Math.max(0, size.height - extent.height))));
+    }
+
+    private Long selectedThreadId() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow < 0) return null;
+        ThreadInfo selected = tableModel.getThreadAt(table.convertRowIndexToModel(selectedRow));
+        return selected != null ? selected.getThreadId() : null;
+    }
+
+    private void restoreThreadSelection(Long selectedId) {
+        table.clearSelection();
+        if (selectedId != null) {
+            for (int row = 0; row < tableModel.getRowCount(); row++) {
+                ThreadInfo thread = tableModel.getThreadAt(row);
+                if (thread.getThreadId() == selectedId) {
+                    int viewRow = table.convertRowIndexToView(row);
+                    if (viewRow >= 0) {
+                        table.setRowSelectionInterval(viewRow, viewRow);
+                        updateThreadDetail(thread, true);
+                    } else {
+                        stackArea.setText("The selected thread is hidden by the current filters.");
+                    }
+                    return;
+                }
+            }
+            stackArea.setText("The selected thread is no longer present in the latest snapshot.");
+        } else {
+            stackArea.setText("Select a thread to view its stack trace.");
         }
-
-        String[] frames = ti.getStackTrace();
-        sb.append(String.format("%n--- Stack Trace (%d frames) ---%n", frames.length));
-        for (String frame : frames) sb.append("    at ").append(frame).append('\n');
-
-        stackArea.setText(sb.toString());
-        stackArea.setCaretPosition(0);
     }
 
     private void onRefresh(ActionEvent e) {
         ScheduledExecutorService sched = schedulerRef.get();
-        if (monitoring.get() && sched != null && !sched.isShutdown())
-            sched.execute(this::fetchSnapshot);
+        long currentGeneration = generation.get();
+        if (monitoring.get() && sched != null && !sched.isShutdown()
+                && refreshPendingGeneration.compareAndSet(-1, currentGeneration)) {
+            try {
+                sched.execute(() -> {
+                    try { fetchSnapshot(currentGeneration); }
+                    finally { refreshPendingGeneration.compareAndSet(currentGeneration, -1); }
+                });
+            } catch (java.util.concurrent.RejectedExecutionException ignored) {
+                refreshPendingGeneration.compareAndSet(currentGeneration, -1);
+            }
+        }
     }
 
     // ── Export ────────────────────────────────────────────────
@@ -487,47 +643,15 @@ public class ThreadViewerPanel extends JPanel {
         }
 
         File file = chooser.getSelectedFile();
-        boolean success = false;
-        try (PrintWriter pw = new PrintWriter(new FileWriter(file))) {
-            pw.printf("%s%n", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(
-                    new Date(snapshot.getTimestamp())));
-            pw.printf("Full thread dump OpenJDK 64-Bit Server VM:%n%n");
-
-            for (ThreadInfo ti : snapshot.getThreads()) {
-                String dump = ti.getJstackDump();
-                if (dump != null) {
-                    pw.print(dump);
-                } else {
-                    pw.printf("\"%s\" #%d %sprio=%d%n",
-                            ti.getName(), ti.getThreadId(),
-                            ti.isDaemon() ? "daemon " : "", ti.getPriority());
-                    pw.printf("   java.lang.Thread.State: %s%n", ti.getState());
-                    for (String frame : ti.getStackTrace()) pw.printf("\tat %s%n", frame);
-                }
-                pw.println();
-            }
-
-            boolean hasDeadlock = false;
-            for (ThreadInfo ti : snapshot.getThreads()) {
-                if (ti.isDeadlocked()) {
-                    if (!hasDeadlock) {
-                        pw.printf("Found one Java-level deadlock:%n");
-                        pw.printf("=============================%n");
-                        hasDeadlock = true;
-                    }
-                    pw.printf("\"%s\":%n", ti.getName());
-                    if (ti.getLockName() != null)
-                        pw.printf("  waiting to lock %s%n", ti.getLockName());
-                    if (ti.getLockOwnerId() >= 0)
-                        pw.printf("  which is held by \"%s\"%n", ti.getLockOwnerName());
-                }
-            }
-            if (!hasDeadlock) {
-                pw.printf("Found 0 deadlocks.%n");
-            }
-            pw.println();
-            success = true;
-
+        boolean replaceExisting = Files.exists(file.toPath());
+        if (replaceExisting && JOptionPane.showConfirmDialog(this,
+                "Replace the existing file?\n" + file.getAbsolutePath(), "Thread Viewer",
+                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) {
+            return;
+        }
+        try {
+            ThreadDumpExporter.save(file.toPath(), replaceExisting,
+                    writer -> ThreadPresentation.writeDump(writer, snapshot));
             JOptionPane.showMessageDialog(this,
                     "Thread dump exported to:\n" + file.getAbsolutePath(),
                     "Thread Viewer", JOptionPane.INFORMATION_MESSAGE);
@@ -536,10 +660,6 @@ public class ThreadViewerPanel extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "Failed to export: " + ex.getMessage(),
                     "Thread Viewer", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            if (!success && file.exists()) {
-                file.delete();
-            }
         }
     }
 
@@ -572,12 +692,14 @@ public class ThreadViewerPanel extends JPanel {
             return switch (col) {
                 case 0 -> ti.getName();
                 case 1 -> ti.getState();
-                case 2 -> ti.getCpuTimeNanos() >= 0 ? ti.getCpuTimeNanos() / 1_000_000 : 0L;
+                case 2 -> ti.getCpuTimeNanos() >= 0 ? ti.getCpuTimeNanos() / 1_000_000 : null;
                 case 3 -> ti.getCategory();
                 case 4 -> ti.getBlockedCount();
                 case 5 -> ti.getWaitedCount();
                 case 6 -> ti.getChannelName() != null ? ti.getChannelName() : "";
                 case 7 -> ti.getConnectorName() != null ? ti.getConnectorName() : "";
+                case 8 -> ti.getRole() != null ? ti.getRole() : "";
+                case 9 -> ThreadPresentation.associationLabel(ti.getAssociationKind());
                 default -> "";
             };
         }

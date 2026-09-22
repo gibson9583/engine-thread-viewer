@@ -72,16 +72,10 @@
                                 <resource>
                                     <directory>webadmin</directory>
                                     <filtering>false</filtering>
-                                    <excludes>
-                                        <exclude>node_modules/**</exclude>
-                                        <exclude>package.json</exclude>
-                                        <exclude>package-lock.json</exclude>
-                                        <exclude>.gitignore</exclude>
-                                        <exclude>web/build.mjs</exclude>
-                                        <exclude>web/plugin.jsx</exclude>
-                                        <exclude>web/tailwind.css</exclude>
-                                        <exclude>web/tv-css.generated.js</exclude>
-                                    </excludes>
+                                    <includes>
+                                        <include>plugin.json</include>
+                                        <include>web/plugin.js</include>
+                                    </includes>
                                 </resource>
                             </resources>
                         </configuration>
@@ -108,16 +102,16 @@
                         <configuration><nodeVersion>v20.18.0</nodeVersion></configuration>
                     </execution>
                     <execution>
-                        <id>npm-install</id>
+                        <id>npm-ci</id>
                         <phase>generate-resources</phase>
                         <goals><goal>npm</goal></goals>
-                        <configuration><arguments>install</arguments></configuration>
+                        <configuration><arguments>ci</arguments></configuration>
                     </execution>
                     <execution>
-                        <id>npm-build-webadmin</id>
+                        <id>npm-test-webadmin</id>
                         <phase>generate-resources</phase>
                         <goals><goal>npm</goal></goals>
-                        <configuration><arguments>run build</arguments></configuration>
+                        <configuration><arguments>test</arguments></configuration>
                     </execution>
                 </executions>
             </plugin>

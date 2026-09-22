@@ -12,15 +12,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.mirth.connect.model.Channel;
 import com.mirth.connect.server.controllers.ChannelController;
 import com.mirth.connect.server.controllers.ControllerFactory;
-import com.mirth.connect.plugins.threadviewer.shared.ThreadCategorizer;
+import com.mirth.connect.plugins.threadviewer.shared.ThreadChannelResolver;
 import com.mirth.connect.plugins.threadviewer.shared.ThreadInfo;
 import com.mirth.connect.plugins.threadviewer.shared.ThreadSnapshot;
 
@@ -93,8 +91,9 @@ public class ThreadSnapshotService {
             threadLookup.put(t.getId(), t);
         }
 
-        // Resolve channel names from OIE's ChannelController
-        Map<String, String> channelIdToName = buildChannelMap();
+        // Each capture gets one immutable deployed/saved identity snapshot.
+        ChannelMetadataSnapshot channelMetadata = buildChannelMetadata();
+        ThreadChannelResolver resolver = channelMetadata.resolver();
 
         // Build the thread list
         List<ThreadInfo> threads = new ArrayList<>(jmxThreads.length);
@@ -102,7 +101,7 @@ public class ThreadSnapshotService {
         Map<String, Integer> categoryCounts = new TreeMap<>();
 
         for (java.lang.management.ThreadInfo jt : jmxThreads) {
-            ThreadInfo ti = convert(jt, bean, deadlockSet, threadLookup, channelIdToName);
+            ThreadInfo ti = convert(jt, bean, deadlockSet, threadLookup, resolver);
             threads.add(ti);
             stateCounts.merge(ti.getState(), 1, Integer::sum);
             categoryCounts.merge(ti.getCategory(), 1, Integer::sum);
@@ -118,26 +117,21 @@ public class ThreadSnapshotService {
         snap.setThreads(threads);
         snap.setStateCounts(stateCounts);
         snap.setCategoryCounts(categoryCounts);
-        snap.setDeployedChannelNames(
-                channelIdToName.values().stream().sorted().collect(Collectors.toList()));
+        snap.setDeployedChannelNames(channelMetadata.deployedNames());
+        snap.setChannels(channelMetadata.options(threads));
 
         return snap;
     }
 
-    private Map<String, String> buildChannelMap() {
-        Map<String, String> map = new HashMap<>();
+    private ChannelMetadataSnapshot buildChannelMetadata() {
         try {
             ChannelController cc = ControllerFactory.getFactory().createChannelController();
-            List<Channel> channels = cc.getChannels(null);
-            if (channels != null) {
-                for (Channel ch : channels) {
-                    map.put(ch.getId(), ch.getName());
-                }
-            }
+            return ChannelMetadataSnapshot.load(() -> cc.getDeployedChannels(null), () -> cc.getChannels(null),
+                    (kind, failure) -> logger.warn("Failed to retrieve {} channel metadata", kind, failure));
         } catch (Exception e) {
-            logger.warn("Failed to retrieve channel list from ChannelController", e);
+            logger.warn("Failed to initialize channel metadata lookup", e);
+            return ChannelMetadataSnapshot.empty();
         }
-        return map;
     }
 
     private ThreadInfo convert(
@@ -145,7 +139,7 @@ public class ThreadSnapshotService {
             ThreadMXBean bean,
             Set<Long> deadlockSet,
             Map<Long, Thread> threadLookup,
-            Map<String, String> channelIdToName) {
+            ThreadChannelResolver resolver) {
 
         ThreadInfo ti = new ThreadInfo();
         ti.setThreadId(jt.getThreadId());
@@ -197,20 +191,8 @@ public class ThreadSnapshotService {
         // jstack-format dump (with interleaved lock/monitor info)
         ti.setJstackDump(buildJstackDump(jt, ti));
 
-        // Category and channel resolution
-        String threadName = jt.getThreadName();
-        ti.setCategory(ThreadCategorizer.categorize(threadName));
-
-        String channelId = ThreadCategorizer.extractChannelId(threadName);
-        if (channelId != null) {
-            ti.setChannelId(channelId);
-            String channelName = channelIdToName.get(channelId);
-            if (channelName == null) {
-                channelName = ThreadCategorizer.extractChannelName(threadName);
-            }
-            ti.setChannelName(channelName != null ? channelName : channelId);
-            ti.setConnectorName(ThreadCategorizer.extractConnectorName(threadName));
-        }
+        // Parse the captured name once; do not read the live name a second time.
+        resolver.resolve(jt.getThreadName()).applyTo(ti);
 
         return ti;
     }
