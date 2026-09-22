@@ -1,0 +1,8 @@
+{
+  "bundle": "package/target/thread-viewer-*.zip",
+  "jars": [
+    "thread-viewer/libs/thread-viewer-shared-*.jar",
+    "thread-viewer/libs/thread-viewer-server-*.jar",
+    "thread-viewer/libs/thread-viewer-client-*.jar"
+  ]
+}
