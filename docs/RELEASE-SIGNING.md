@@ -6,6 +6,10 @@ Tagged releases require SSL.com signatures on these plugin-owned JARs:
 - `thread-viewer/libs/thread-viewer-server-*.jar`
 - `thread-viewer/libs/thread-viewer-client-*.jar`
 
+The bundle is `package/target/thread-viewer-*.zip`. A successful release requests
+three signatures, one per JAR; configure the signing secrets on
+`gibson9583/engine-thread-viewer` before tagging that release.
+
 The release builds the existing extension ZIP, signs and timestamps only those
 JARs, verifies them, and replaces them in the ZIP before checksums, provenance
 attestations (where present), and publication. Every other ZIP entry, including
