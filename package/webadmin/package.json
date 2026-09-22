@@ -5,7 +5,8 @@
     "type": "module",
     "description": "Build for the Thread Viewer web administrator plugin (compiles web/plugin.jsx to web/plugin.js).",
     "scripts": {
-        "build": "node web/build.mjs"
+        "build": "node web/build.mjs",
+        "test": "npm run build && node --test test/*.test.mjs"
     },
     "devDependencies": {
         "@tailwindcss/postcss": "^4",
