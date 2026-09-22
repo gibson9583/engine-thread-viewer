@@ -6,10 +6,10 @@ from the isolated OIE 4.6.0 validation run on September 22, 2026. The channels
 are synthetic test fixtures. These are component captures replaying recorded
 data, not screenshots of a currently connected administrator session.
 
-- [Swing channel ownership](swing-channel-ownership.png): stable channel and
-  association filters identify the idle polling worker and scheduler. The
-  selected worker shows its channel ID, source connector ID, resolution reason,
-  and lifetime CPU totals.
+- [Web channel ownership](web-channel-ownership.png): the stable channel filter
+  selects `TV Review JS Poll`, and the `Channel ownership` association filter
+  identifies its idle polling worker and scheduler. Lifetime CPU totals remain
+  visible in the retained snapshot after monitoring stops.
 - [Web connector identity](web-connector-identity.png): `Send (1) Backup` stays
   intact as the connector name, separate from connector metadata ID `1`.
   Details expose the channel ID, association, resolution, and match reason.
@@ -20,10 +20,8 @@ data, not screenshots of a currently connected administrator session.
 
 The web captures use the shipped React bundle, the host's actual Radix dialog
 renderer and CSS, and Chromium at 2× pixel density. REST and routing are fixture
-boundaries; the captured thread data is unchanged. The Swing capture renders the
-actual compiled panel with the standard Swing Metal look and feel and a retained
-snapshot after monitoring stops. All 27 loaded plugin classes match the validated
-plugin ZIP. Neither capture requires a new engine or database.
+boundaries; the captured thread data is unchanged. All screenshots show the web
+administrator, and no capture requires a new engine or database.
 
 Capture inputs (SHA-256):
 
