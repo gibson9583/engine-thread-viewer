@@ -22,7 +22,7 @@
     <properties>
         <!-- Release version — CI overrides with -Drevision=<tag> so the built
              zip and plugin.xml pluginVersion follow the git tag. -->
-        <revision>1.0.7</revision>
+        <revision>1.0.8</revision>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.release>17</maven.compiler.release>
@@ -34,7 +34,7 @@
         <!-- Engine versions the packaged plugin DECLARES support for
              (plugin.xml <mirthVersion> — the extension loader only loads a
              plugin whose list contains the running engine version). -->
-        <plugin.supported.oie.versions>${mirth.version}</plugin.supported.oie.versions>
+        <plugin.supported.oie.versions>4.6.0,4.7.0</plugin.supported.oie.versions>
         <junit.version>5.10.2</junit.version>
     </properties>
 
