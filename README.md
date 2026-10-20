@@ -1,5 +1,7 @@
 # OIE Thread Viewer Plugin
 
+Release 1.0.8 is being prepared with engine compatibility limited to OIE **4.6.0 and 4.7.0**. Runtime validation on the final 4.7.0 release is pending; see the [release preparation notes](docs/oie-4.6-4.7-release.md).
+
 A dashboard plugin for Open Integration Engine (OIE) that provides real-time JVM thread monitoring
 with channel-aware filtering, deadlock detection, and jstack-compatible thread dump export.
 
